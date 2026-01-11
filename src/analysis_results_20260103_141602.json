@@ -1,0 +1,43 @@
+{
+  "summary": {
+    "total_events": 88,
+    "total_authentications": 88,
+    "successful_logins": 71,
+    "failed_logins": 17,
+    "login_success_rate": 80.68,
+    "unique_users": 3,
+    "unique_ips": 2
+  },
+  "mfa_analysis": {
+    "successful": 24,
+    "failed": 2,
+    "denied": 0,
+    "success_rate": 92.31
+  },
+  "mfa_suspicious_users": [],
+  "suspicious_users": [],
+  "suspicious_ips": [],
+  "geographic_patterns": [
+    {
+      "location": "United States",
+      "count": 61,
+      "users": []
+    },
+    {
+      "location": "Canada",
+      "count": 13,
+      "users": []
+    },
+    {
+      "location": "United Kingdom",
+      "count": 8,
+      "users": []
+    },
+    {
+      "location": "India",
+      "count": 4,
+      "users": []
+    }
+  ],
+  "last_updated": "2026-01-03T14:16:02.725138"
+}

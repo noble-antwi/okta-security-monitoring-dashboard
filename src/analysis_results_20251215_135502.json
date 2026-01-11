@@ -1,0 +1,70 @@
+{
+  "summary": {
+    "total_events": 124,
+    "total_authentications": 124,
+    "successful_logins": 85,
+    "failed_logins": 39,
+    "login_success_rate": 68.55,
+    "unique_users": 4,
+    "unique_ips": 5
+  },
+  "mfa_analysis": {
+    "successful": 32,
+    "failed": 5,
+    "denied": 0,
+    "success_rate": 86.49
+  },
+  "mfa_suspicious_users": [],
+  "suspicious_users": [
+    {
+      "user": "user_574@company.com",
+      "failure_count": 8,
+      "risk_level": "medium"
+    },
+    {
+      "user": "user_354@company.com",
+      "failure_count": 6,
+      "risk_level": "low"
+    },
+    {
+      "user": "user_246@company.com",
+      "failure_count": 5,
+      "risk_level": "low"
+    }
+  ],
+  "suspicious_ips": [
+    {
+      "ip": "192.168.91.101",
+      "failure_count": 3,
+      "risk_level": "medium"
+    },
+    {
+      "ip": "192.168.55.165",
+      "failure_count": 5,
+      "risk_level": "low"
+    }
+  ],
+  "geographic_patterns": [
+    {
+      "location": "United States",
+      "count": 86,
+      "users": []
+    },
+    {
+      "location": "Canada",
+      "count": 18,
+      "users": []
+    },
+    {
+      "location": "United Kingdom",
+      "count": 12,
+      "users": []
+    },
+    {
+      "location": "India",
+      "count": 6,
+      "users": []
+    }
+  ],
+  "last_updated": "2025-12-15T13:55:02.725138"
+}
