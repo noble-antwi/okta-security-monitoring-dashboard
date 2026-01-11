@@ -70,23 +70,18 @@
             <!-- Date Range Bar -->
             <section class="date-range-section">
                 <div class="date-controls">
-                    <span class="controls-label">Time Range:</span>
-                    <button class="date-btn active" data-hours="24">
-                        <i class="fas fa-clock"></i> Last 24h
-                    </button>
-                    <button class="date-btn" data-hours="168">
-                        <i class="fas fa-calendar-week"></i> Last 7 days
-                    </button>
-                    <button class="date-btn" data-hours="720">
-                        <i class="fas fa-calendar-alt"></i> Last 30 days
-                    </button>
-                    <div class="custom-date-picker">
-                        <input type="number" id="customHours" placeholder="Hours" min="1" max="8760">
-                        <button class="date-btn" id="applyCustomBtn">
-                            <i class="fas fa-check"></i> Apply
-                        </button>
+                    <span class="controls-label">TIME RANGE:</span>
+                    <select id="timeRangeSelect" class="time-range-dropdown">
+                        <option value="24">Last 24 Hours</option>
+                        <option value="168">Last 7 Days</option>
+                        <option value="720" selected>Last 30 Days</option>
+                        <option value="custom">Custom Hours</option>
+                    </select>
+                    <div id="customHoursDiv" class="custom-hours-input" style="display: none;">
+                        <input type="number" id="customHours" placeholder="Hours (1-8760)" min="1" max="8760">
+                        <button id="applyCustomBtn" class="btn-apply">Apply</button>
                     </div>
-                    <span class="date-info" id="dateInfo">Showing last 24 hours</span>
+                    <span class="date-info" id="dateInfo">Showing last 30 days</span>
                 </div>
             </section>
 
@@ -305,30 +300,76 @@
                 </div>
             </section>
 
-            <!-- Trends Section -->
+            <!-- Insights & Analysis Section -->
             <section class="trends-section">
                 <div class="section-header">
-                    <h2><i class="fas fa-chart-line"></i> Authentication Trends & Historical Analysis</h2>
-                    <p class="trend-subtitle">Showing trends for selected time range</p>
+                    <h2><i class="fas fa-lightbulb"></i> Key Insights & Metrics</h2>
+                    <p class="trend-subtitle">Summary for selected time range</p>
                 </div>
 
-                <!-- Trend Chart -->
-                <div class="trend-chart-container">
-                    <div class="chart-header">
-                        <h3>Authentication Activity Trend</h3>
-                        <span class="chart-info" id="trendChartInfo">Total events over time</span>
-                    </div>
-                    <div class="chart-legend-help">
-                        <div class="legend-item">
-                            <span class="legend-color" style="background: #1e40af;"></span>
-                            <span><strong>Total Events</strong> - All authentication attempts in the selected time range</span>
+                <!-- Key Metrics Summary -->
+                <div class="insights-grid">
+                    <div class="insight-card">
+                        <div class="insight-header">
+                            <span class="insight-icon"><i class="fas fa-users"></i></span>
+                            <h4>Active Users</h4>
                         </div>
-                        <div class="legend-item">
-                            <span class="legend-color" style="background: #ef4444;"></span>
-                            <span><strong>Failed Logins</strong> - Number of failed authentication attempts</span>
+                        <div class="insight-value" id="insightActiveUsers">0</div>
+                        <div class="insight-footer">Unique users authenticated</div>
+                    </div>
+
+                    <div class="insight-card">
+                        <div class="insight-header">
+                            <span class="insight-icon"><i class="fas fa-shield-alt"></i></span>
+                            <h4>MFA Success Rate</h4>
+                        </div>
+                        <div class="insight-value" id="insightMfaRate">0%</div>
+                        <div class="insight-footer">Multi-factor authentications</div>
+                    </div>
+
+                    <div class="insight-card">
+                        <div class="insight-header">
+                            <span class="insight-icon"><i class="fas fa-exclamation-triangle"></i></span>
+                            <h4>At-Risk Users</h4>
+                        </div>
+                        <div class="insight-value" id="insightRiskUsers">0</div>
+                        <div class="insight-footer">Users with multiple failures</div>
+                    </div>
+
+                    <div class="insight-card">
+                        <div class="insight-header">
+                            <span class="insight-icon"><i class="fas fa-globe"></i></span>
+                            <h4>Unique Locations</h4>
+                        </div>
+                        <div class="insight-value" id="insightLocations">0</div>
+                        <div class="insight-footer">Geographic access patterns</div>
+                    </div>
+                </div>
+
+                <!-- Geographic Distribution -->
+                <div class="geo-section">
+                    <h3><i class="fas fa-map-marked-alt"></i> Geographic Distribution</h3>
+                    <div class="geo-grid" id="geoGrid">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Top Suspicious Activities -->
+                <div class="suspicious-section">
+                    <div class="suspicious-split">
+                        <div class="suspicious-col">
+                            <h3><i class="fas fa-user-shield"></i> Users with Failed Attempts</h3>
+                            <div class="suspicious-list" id="suspiciousUsersList">
+                                <p class="empty-state">No suspicious activity detected</p>
+                            </div>
+                        </div>
+                        <div class="suspicious-col">
+                            <h3><i class="fas fa-network-wired"></i> Suspicious IP Addresses</h3>
+                            <div class="suspicious-list" id="suspiciousIpsList">
+                                <p class="empty-state">No suspicious activity detected</p>
+                            </div>
                         </div>
                     </div>
-                    <canvas id="trendChart" height="80"></canvas>
                 </div>
 
                 <!-- Week-over-Week Comparison -->

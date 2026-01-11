@@ -27,7 +27,8 @@ const filterBtns = document.querySelectorAll('.filter-btn');
 const exportPdfBtn = document.getElementById('exportPdfBtn');
 const exportCsvBtn = document.getElementById('exportCsvBtn');
 const printBtn = document.getElementById('printBtn');
-const dateBtns = document.querySelectorAll('.date-btn[data-hours]');
+const timeRangeSelect = document.getElementById('timeRangeSelect');
+const customHoursDiv = document.getElementById('customHoursDiv');
 const applyCustomBtn = document.getElementById('applyCustomBtn');
 const customHoursInput = document.getElementById('customHours');
 const dateInfo = document.getElementById('dateInfo');
@@ -197,34 +198,6 @@ function applyDataFilter(filter) {
 }
 
 /**
- * Handle date range button clicks
- */
-async function handleDateRangeClick(e) {
-    const btn = e.target.closest('.date-btn[data-hours]');
-    if (!btn) return;
-    
-    const hours = parseInt(btn.getAttribute('data-hours'));
-    
-    // Update active button
-    dateBtns.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    customHoursInput.value = '';
-    
-    // Update date info
-    const labels = {
-        24: 'Showing last 24 hours',
-        168: 'Showing last 7 days',
-        720: 'Showing last 30 days'
-    };
-    dateInfo.textContent = labels[hours] || `Showing last ${hours} hours`;
-    
-    currentHours = hours;
-    
-    // Load new data
-    await loadDataWithDateRange(hours);
-}
-
-/**
  * Handle custom hours input
  */
 async function handleCustomHours() {
@@ -235,8 +208,8 @@ async function handleCustomHours() {
         return;
     }
     
-    // Deactivate preset buttons
-    dateBtns.forEach(b => b.classList.remove('active'));
+    // Reset dropdown to custom
+    timeRangeSelect.value = 'custom';
     
     // Update date info
     const days = Math.floor(hours / 24);
@@ -247,7 +220,7 @@ async function handleCustomHours() {
     }
     
     currentHours = hours;
-    await loadDataWithDateRange(hours);
+    await loadInsights(hours);
 }
 
 /**
@@ -905,15 +878,37 @@ document.addEventListener('DOMContentLoaded', () => {
     // Filter button listeners
     document.addEventListener('click', handleFilterClick);
     
-    // Date range listeners
-    dateBtns.forEach(btn => btn.addEventListener('click', handleDateRangeClick));
+    // Date range dropdown listener
+    timeRangeSelect?.addEventListener('change', async (e) => {
+        const value = e.target.value;
+        if (value === 'custom') {
+            customHoursDiv.style.display = 'flex';
+            customHoursInput.focus();
+            dateInfo.textContent = 'Enter custom hours';
+        } else {
+            customHoursDiv.style.display = 'none';
+            const hours = parseInt(value);
+            
+            // Update date info
+            const labels = {
+                24: 'Showing last 24 hours',
+                168: 'Showing last 7 days',
+                720: 'Showing last 30 days'
+            };
+            dateInfo.textContent = labels[hours] || `Showing last ${hours} hours`;
+            
+            currentHours = hours;
+            await loadInsights(hours);
+        }
+    });
+    
     applyCustomBtn?.addEventListener('click', handleCustomHours);
     customHoursInput?.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') handleCustomHours();
     });
     
-    // Load trend data and week-over-week comparison
-    loadTrendData('30d');
+    // Load insights for default time range (30 days = 720 hours)
+    loadInsights(720);
     loadWeekOverWeekData();
 });
 
@@ -947,55 +942,132 @@ async function updateTrendForTimeRange(hours) {
     await loadTrendData(period);
 }
 
-async function loadTrendData(period = '30d') {
+async function loadInsights(hours = 720) {
     try {
-        // Show loading state
-        const chartContainer = document.querySelector('.trend-chart-container');
-        if (chartContainer) {
-            chartContainer.classList.add('loading');
-        }
+        console.log(`📊 Loading insights for ${hours} hours`);
         
-        // Map period to endpoint and hours
-        let endpoint, hoursForRequest;
-        
-        if (period === '24h') {
-            endpoint = '/api/trends/custom?hours=24';
-            hoursForRequest = 24;
-        } else if (period === '7d') {
-            endpoint = '/api/trends/7d';
-            hoursForRequest = 168;
-        } else if (period === '30d') {
-            endpoint = '/api/trends/30d';
-            hoursForRequest = 720;
-        } else {
-            endpoint = '/api/trends/30d';
-            hoursForRequest = 720;
-        }
-        
-        console.log(`📊 Fetching trends from ${endpoint}`);
-        const response = await fetch(endpoint);
+        // Fetch analysis data for the time range
+        const response = await fetch(`/api/analysis?hours=${hours}`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         const data = await response.json();
-        console.log(`Fetched trend data for ${period}:`, data);
+        console.log(`Fetched analysis data:`, data);
         
-        // Data is already in trend format from the API
-        let trendData = data;
-        
-        console.log(`Rendering chart with trendData:`, trendData);
-        renderTrendChart(trendData, period);
-        updateTrendStats(trendData);
-        updateChartInfo(period, trendData);
-        
-        // Remove loading state
-        if (chartContainer) {
-            chartContainer.classList.remove('loading');
-        }
+        // Display the insights
+        renderInsights(data, hours);
         
     } catch (error) {
-        console.error('Error loading trend data:', error);
-        showNotification('Failed to load trend data', 'error');
+        console.error('❌ Error loading insights:', error);
     }
+}
+
+function renderInsights(analysisData, hours) {
+    // Extract key metrics from the analysis data
+    const summary = analysisData?.summary || {};
+    
+    // Update insight cards
+    const uniqueUsers = summary.unique_users || 0;
+    const mfaSuccessRate = analysisData?.mfa_analysis?.success_rate || 0;
+    const suspiciousUserCount = (analysisData?.suspicious_users || []).length + 
+                                  (analysisData?.mfa_suspicious_users || []).length;
+    const geoPatterns = analysisData?.geographic_patterns || [];
+    const uniqueLocations = geoPatterns.length;
+    
+    // Update DOM elements
+    document.getElementById('insightActiveUsers').textContent = uniqueUsers;
+    document.getElementById('insightMfaRate').textContent = Math.round(mfaSuccessRate) + '%';
+    document.getElementById('insightRiskUsers').textContent = suspiciousUserCount;
+    document.getElementById('insightLocations').textContent = uniqueLocations;
+    
+    // Render geographic distribution
+    renderGeoDistribution(geoPatterns);
+    
+    // Render suspicious activities
+    renderSuspiciousActivities(analysisData);
+}
+
+function renderGeoDistribution(geoPatterns) {
+    const geoGrid = document.getElementById('geoGrid');
+    if (!geoGrid) return;
+    
+    geoGrid.innerHTML = '';
+    
+    if (!geoPatterns || geoPatterns.length === 0) {
+        geoGrid.innerHTML = '<p class="empty-state">No geographic data available</p>';
+        return;
+    }
+    
+    // Calculate total for percentage
+    const total = geoPatterns.reduce((sum, g) => sum + g.count, 0);
+    
+    // Sort by count and display
+    geoPatterns.sort((a, b) => b.count - a.count).forEach(geo => {
+        const percentage = total > 0 ? Math.round((geo.count / total) * 100) : 0;
+        const card = document.createElement('div');
+        card.className = 'geo-card';
+        card.innerHTML = `
+            <div class="geo-location">${geo.location}</div>
+            <div class="geo-count">${geo.count}</div>
+            <div class="geo-percentage">${percentage}%</div>
+        `;
+        geoGrid.appendChild(card);
+    });
+}
+
+function renderSuspiciousActivities(analysisData) {
+    const suspiciousUsersList = document.getElementById('suspiciousUsersList');
+    const suspiciousIpsList = document.getElementById('suspiciousIpsList');
+    
+    if (!suspiciousUsersList || !suspiciousIpsList) return;
+    
+    // Combine all suspicious users (from both regular and MFA)
+    const allSuspiciousUsers = [
+        ...(analysisData?.suspicious_users || []),
+        ...(analysisData?.mfa_suspicious_users || [])
+    ];
+    
+    // Render suspicious users
+    if (allSuspiciousUsers.length > 0) {
+        suspiciousUsersList.innerHTML = '';
+        allSuspiciousUsers.slice(0, 10).forEach(user => {
+            const item = document.createElement('div');
+            item.className = 'suspicious-item';
+            const failureCount = user.failure_count || 0;
+            item.innerHTML = `
+                <div class="suspicious-name">👤 ${user.user}</div>
+                <div class="suspicious-detail">${failureCount} failed attempt${failureCount !== 1 ? 's' : ''}</div>
+            `;
+            suspiciousUsersList.appendChild(item);
+        });
+    } else {
+        suspiciousUsersList.innerHTML = '<p class="empty-state">No suspicious activity detected</p>';
+    }
+    
+    // Render suspicious IPs
+    const suspiciousIps = analysisData?.suspicious_ips || [];
+    if (suspiciousIps.length > 0) {
+        suspiciousIpsList.innerHTML = '';
+        suspiciousIps.slice(0, 10).forEach(ip => {
+            const item = document.createElement('div');
+            item.className = 'suspicious-item';
+            const failureCount = ip.failure_count || 0;
+            item.innerHTML = `
+                <div class="suspicious-name">🌐 ${ip.ip_address}</div>
+                <div class="suspicious-detail">${failureCount} failed attempt${failureCount !== 1 ? 's' : ''}</div>
+            `;
+            suspiciousIpsList.appendChild(item);
+        });
+    } else {
+        suspiciousIpsList.innerHTML = '<p class="empty-state">No suspicious activity detected</p>';
+    }
+}
+
+async function loadTrendData(period = '30d') {
+    // This function is now replaced by loadInsights
+    // Keeping for backward compatibility
+    const hoursMap = { '24h': 24, '7d': 168, '30d': 720 };
+    const hours = hoursMap[period] || 720;
+    await loadInsights(hours);
 }
 
 /**
@@ -1018,152 +1090,8 @@ function updateChartInfo(period, trendData) {
 /**
  * Render Chart.js line chart for trends - SIMPLIFIED VERSION
  */
-function renderTrendChart(trendData, period = '30d') {
-    const ctx = document.getElementById('trendChart');
-    if (!ctx) {
-        console.error('❌ Chart canvas element not found');
-        return;
-    }
-    
-    // Destroy existing chart if it exists
-    if (charts.trend) {
-        charts.trend.destroy();
-    }
-    
-    const {timestamps, data_points} = trendData;
-    
-    if (!timestamps || !data_points) {
-        console.error('❌ Invalid trend data format');
-        return;
-    }
-    
-    console.log(`✅ Rendering chart with ${timestamps.length} data points for period: ${period}`);
-    
-    // Format timestamps for display
-    const labelStep = Math.max(1, Math.ceil(timestamps.length / 10));
-    const displayLabels = timestamps.map((ts, i) => {
-        if (i % labelStep === 0) {
-            const date = new Date(ts);
-            if (period === '24h') {
-                return date.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
-            } else {
-                return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
-            }
-        }
-        return '';
-    });
-    
-    // Create a simple, clean single-line chart for Total Events
-    charts.trend = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: displayLabels,
-            datasets: [
-                {
-                    label: 'Total Events',
-                    data: data_points.total_events || [],
-                    borderColor: '#1e40af',
-                    backgroundColor: 'rgba(30, 64, 175, 0.15)',
-                    borderWidth: 3,
-                    tension: 0.3,
-                    fill: true,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    pointBackgroundColor: '#1e40af',
-                    pointBorderColor: 'white',
-                    pointBorderWidth: 2,
-                    segment: {
-                        borderColor: ctx => ctx.p0DataIndex === undefined ? 'rgb(0,0,0,0)' : undefined,
-                    }
-                },
-                {
-                    label: 'Failed Logins',
-                    data: data_points.failed_logins || [],
-                    borderColor: '#ef4444',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.3,
-                    fill: true,
-                    pointRadius: 3,
-                    pointHoverRadius: 5,
-                    pointBackgroundColor: '#ef4444',
-                    pointBorderColor: 'white',
-                    pointBorderWidth: 1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            interaction: {
-                mode: 'index',
-                intersect: false
-            },
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: {
-                        color: '#333',
-                        padding: 15,
-                        font: {size: 13, weight: 'bold'},
-                        usePointStyle: true
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                    padding: 12,
-                    titleFont: {size: 12, weight: 'bold'},
-                    bodyFont: {size: 11},
-                    borderColor: 'rgba(255, 255, 255, 0.3)',
-                    borderWidth: 1,
-                    displayColors: true,
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) label += ': ';
-                            label += Math.round(context.parsed.y);
-                            return label;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    title: {
-                        display: true,
-                        text: 'Count',
-                        color: '#333',
-                        font: {weight: 'bold', size: 12}
-                    },
-                    ticks: {
-                        color: '#666',
-                        font: {size: 11}
-                    },
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)',
-                        drawBorder: false
-                    }
-                },
-                x: {
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)',
-                        drawBorder: false
-                    },
-                    ticks: {
-                        color: '#666',
-                        font: {size: 11}
-                    }
-                }
-            }
-        }
-    });
-}
-
 /**
- * Update trend statistics display
+ * Update trend statistics display (deprecated - kept for compatibility)
  */
 function updateTrendStats(trendData) {
     const stats = trendData.summary;
