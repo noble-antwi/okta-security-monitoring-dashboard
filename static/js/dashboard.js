@@ -969,6 +969,7 @@ async function loadInsights(hours = 720) {
         console.log(`Fetched analysis data:`, data);
         
         // Update all dashboard sections with new data
+        updateSecurityScore(data);
         updateKPICards(data);
         renderLoginStatusChart(data);
         renderMFAChart(data);
