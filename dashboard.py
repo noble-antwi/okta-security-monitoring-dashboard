@@ -326,6 +326,25 @@ def get_30day_trends():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/trends/custom')
+def get_custom_trends():
+    """Get trends for custom hours parameter"""
+    try:
+        hours = request.args.get('hours', 24, type=int)
+        
+        # Validate hours
+        if hours < 1 or hours > 8760:
+            return jsonify({'error': 'Hours must be between 1 and 8760'}), 400
+        
+        from trends_analyzer import TrendsAnalyzer
+        analyzer = TrendsAnalyzer(ANALYSIS_RESULTS_DIR)
+        trends = analyzer.get_trend_data(hours)
+        return jsonify(trends), 200
+    except Exception as e:
+        logger.error(f"Error getting custom trends: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/trends/week-over-week')
 def get_week_over_week():
     """Get week-over-week comparison"""

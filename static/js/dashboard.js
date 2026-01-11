@@ -955,15 +955,24 @@ async function loadTrendData(period = '30d') {
             chartContainer.classList.add('loading');
         }
         
-        // Map period to endpoint
-        // Note: For 24h, we use 7d trends since analysis endpoint doesn't have time-series data
-        const endpointMap = {
-            '24h': '/api/trends/7d',  // Use 7d trends for 24h to get time-series data
-            '7d': '/api/trends/7d',
-            '30d': '/api/trends/30d'
-        };
+        // Map period to endpoint and hours
+        let endpoint, hoursForRequest;
         
-        const endpoint = endpointMap[period] || endpointMap['30d'];
+        if (period === '24h') {
+            endpoint = '/api/trends/custom?hours=24';
+            hoursForRequest = 24;
+        } else if (period === '7d') {
+            endpoint = '/api/trends/7d';
+            hoursForRequest = 168;
+        } else if (period === '30d') {
+            endpoint = '/api/trends/30d';
+            hoursForRequest = 720;
+        } else {
+            endpoint = '/api/trends/30d';
+            hoursForRequest = 720;
+        }
+        
+        console.log(`📊 Fetching trends from ${endpoint}`);
         const response = await fetch(endpoint);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
