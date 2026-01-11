@@ -134,30 +134,155 @@ def get_analysis():
     # Get hours parameter from query string (default 24)
     hours = request.args.get('hours', 24, type=int)
     
-    # If requesting different time range, run fresh analysis
+    # If requesting different time range, use aggregated historical data
     if hours != 24:
-        logger.info(f"Fetching analysis for last {hours} hours...")
+        logger.info(f"Fetching aggregated analysis for last {hours} hours...")
         try:
-            from okta_connector import OktaConnector
-            from log_analyzer import LogAnalyzer
+            from trends_analyzer import TrendsAnalyzer
             
-            # Connect to Okta and fetch logs
-            connector = OktaConnector()
-            logs = connector.get_logs(hours_ago=hours)
+            # Get trend data which aggregates historical analysis files
+            analyzer = TrendsAnalyzer(ANALYSIS_RESULTS_DIR)
+            trend_data = analyzer.get_trend_data(hours)
             
-            if not logs:
-                return jsonify({'error': f'No logs found in last {hours} hours'}), 404
+            # Transform trend data to analysis format
+            if not trend_data or not trend_data.get('timestamps'):
+                # Return empty analysis structure
+                return jsonify({
+                    'summary': {
+                        'total_events': 0,
+                        'successful_logins': 0,
+                        'failed_logins': 0,
+                        'login_success_rate': 0,
+                        'unique_users': 0,
+                        'unique_ips': 0
+                    },
+                    'mfa_analysis': {
+                        'successful': 0,
+                        'failed': 0,
+                        'denied': 0,
+                        'success_rate': 0
+                    },
+                    'suspicious_users': [],
+                    'mfa_suspicious_users': [],
+                    'suspicious_ips': [],
+                    'geographic_patterns': []
+                })
             
-            # Analyze logs
-            analyzer = LogAnalyzer()
-            analysis = analyzer.run_full_analysis(logs)
+            # Aggregate data from multiple analysis files
+            all_suspicious_users = {}
+            all_suspicious_ips = {}
+            all_geo_patterns = {}
+            total_events = 0
+            total_success = 0
+            total_failed = 0
+            total_mfa_success = 0
+            total_mfa_failed = 0
+            total_mfa_denied = 0
+            unique_users = set()
+            unique_ips = set()
             
-            transformed = transform_analysis_for_dashboard(analysis)
-            return jsonify(transformed)
+            # Collect data from all files in the time range
+            for ts, path in analyzer._get_analysis_files():
+                if not analyzer._is_within_hours(ts, hours):
+                    continue
+                
+                analysis = analyzer._load_analysis(path)
+                if not analysis:
+                    continue
+                
+                summary = analysis.get('summary', {})
+                total_events += summary.get('total_events', 0)
+                total_success += summary.get('successful_logins', 0)
+                total_failed += summary.get('failed_logins', 0)
+                unique_users.update(summary.get('unique_users', []) if isinstance(summary.get('unique_users'), (list, set)) else [])
+                
+                # MFA data
+                mfa = analysis.get('mfa_analysis', {})
+                total_mfa_success += mfa.get('successful', 0)
+                total_mfa_failed += mfa.get('failed', 0)
+                total_mfa_denied += mfa.get('denied', 0)
+                
+                # Suspicious users
+                for user in analysis.get('suspicious_users', []):
+                    u = user.get('user', 'unknown')
+                    if u not in all_suspicious_users:
+                        all_suspicious_users[u] = user
+                    else:
+                        all_suspicious_users[u]['failure_count'] = all_suspicious_users[u].get('failure_count', 0) + user.get('failure_count', 0)
+                
+                for user in analysis.get('mfa_suspicious_users', []):
+                    u = user.get('user', 'unknown')
+                    if u not in all_suspicious_users:
+                        all_suspicious_users[u] = user
+                    else:
+                        all_suspicious_users[u]['failure_count'] = all_suspicious_users[u].get('failure_count', 0) + user.get('failure_count', 0)
+                
+                # Suspicious IPs
+                for ip_data in analysis.get('suspicious_ips', []):
+                    ip = ip_data.get('ip_address', 'unknown')
+                    if ip not in all_suspicious_ips:
+                        all_suspicious_ips[ip] = ip_data
+                    else:
+                        all_suspicious_ips[ip]['failure_count'] = all_suspicious_ips[ip].get('failure_count', 0) + ip_data.get('failure_count', 0)
+                
+                # Geographic patterns
+                for geo in analysis.get('geographic_patterns', []):
+                    location = geo.get('location', 'unknown')
+                    if location not in all_geo_patterns:
+                        all_geo_patterns[location] = geo
+                    else:
+                        all_geo_patterns[location]['count'] = all_geo_patterns[location].get('count', 0) + geo.get('count', 0)
+            
+            # Calculate success rate
+            mfa_total = total_mfa_success + total_mfa_failed + total_mfa_denied
+            mfa_success_rate = (total_mfa_success / mfa_total * 100) if mfa_total > 0 else 0
+            login_success_rate = (total_success / total_events * 100) if total_events > 0 else 0
+            
+            # Return aggregated analysis
+            return jsonify({
+                'summary': {
+                    'total_events': total_events,
+                    'successful_logins': total_success,
+                    'failed_logins': total_failed,
+                    'login_success_rate': login_success_rate,
+                    'unique_users': len(unique_users),
+                    'unique_ips': len(unique_ips)
+                },
+                'mfa_analysis': {
+                    'successful': total_mfa_success,
+                    'failed': total_mfa_failed,
+                    'denied': total_mfa_denied,
+                    'success_rate': mfa_success_rate
+                },
+                'suspicious_users': sorted(list(all_suspicious_users.values()), key=lambda x: x.get('failure_count', 0), reverse=True)[:10],
+                'mfa_suspicious_users': [],
+                'suspicious_ips': sorted(list(all_suspicious_ips.values()), key=lambda x: x.get('failure_count', 0), reverse=True)[:10],
+                'geographic_patterns': sorted(list(all_geo_patterns.values()), key=lambda x: x.get('count', 0), reverse=True)
+            })
             
         except Exception as e:
-            logger.error(f"Error fetching analysis for {hours} hours: {str(e)}")
-            return jsonify({'error': f'Failed to analyze logs: {str(e)}'}), 500
+            logger.error(f"Error fetching aggregated analysis for {hours} hours: {str(e)}")
+            # Return empty structure instead of error
+            return jsonify({
+                'summary': {
+                    'total_events': 0,
+                    'successful_logins': 0,
+                    'failed_logins': 0,
+                    'login_success_rate': 0,
+                    'unique_users': 0,
+                    'unique_ips': 0
+                },
+                'mfa_analysis': {
+                    'successful': 0,
+                    'failed': 0,
+                    'denied': 0,
+                    'success_rate': 0
+                },
+                'suspicious_users': [],
+                'mfa_suspicious_users': [],
+                'suspicious_ips': [],
+                'geographic_patterns': []
+            })
     
     # Default: return latest saved analysis
     analysis = get_latest_analysis()
