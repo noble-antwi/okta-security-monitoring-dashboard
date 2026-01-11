@@ -1016,7 +1016,7 @@ function updateChartInfo(period, trendData) {
 }
 
 /**
- * Render Chart.js line chart for trends
+ * Render Chart.js line chart for trends - SIMPLIFIED VERSION
  */
 function renderTrendChart(trendData, period = '30d') {
     const ctx = document.getElementById('trendChart');
@@ -1033,85 +1033,64 @@ function renderTrendChart(trendData, period = '30d') {
     const {timestamps, data_points} = trendData;
     
     if (!timestamps || !data_points) {
-        console.error('❌ Invalid trend data format - missing timestamps or data_points', {timestamps, data_points});
+        console.error('❌ Invalid trend data format');
         return;
     }
     
     console.log(`✅ Rendering chart with ${timestamps.length} data points for period: ${period}`);
     
-    // Format timestamps for display (show every Nth label to avoid crowding)
-    const labelStep = Math.max(1, Math.ceil(timestamps.length / 8));
+    // Format timestamps for display
+    const labelStep = Math.max(1, Math.ceil(timestamps.length / 10));
     const displayLabels = timestamps.map((ts, i) => {
         if (i % labelStep === 0) {
             const date = new Date(ts);
             if (period === '24h') {
                 return date.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
             } else {
-                return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric', hour: '2-digit'});
+                return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
             }
         }
         return '';
     });
     
-    // Determine if we have enough data to show all 3 lines
-    const hasData = data_points.total_events && data_points.total_events.length > 0;
-    
-    const datasets = [
-        {
-            label: 'Total Events (Count)',
-            data: data_points.total_events || [],
-            borderColor: '#1e40af',
-            backgroundColor: 'rgba(30, 64, 175, 0.1)',
-            borderWidth: 3,
-            tension: 0.4,
-            fill: true,
-            pointRadius: 5,
-            pointHoverRadius: 7,
-            pointBackgroundColor: '#1e40af',
-            pointBorderColor: 'white',
-            pointBorderWidth: 2,
-            yAxisID: 'y',
-            segment: {
-                borderColor: ctx => ctx.p0DataIndex === undefined ? 'rgb(0,0,0,0)' : undefined,
-            }
-        },
-        {
-            label: 'Failed Logins (Count)',
-            data: data_points.failed_logins || [],
-            borderColor: '#ef4444',
-            backgroundColor: 'rgba(239, 68, 68, 0.05)',
-            borderWidth: 2,
-            tension: 0.4,
-            fill: false,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#ef4444',
-            pointBorderColor: 'white',
-            pointBorderWidth: 2,
-            yAxisID: 'y1'
-        },
-        {
-            label: 'Login Success Rate (%)',
-            data: data_points.login_success_rate || [],
-            borderColor: '#22c55e',
-            backgroundColor: 'rgba(34, 197, 94, 0.05)',
-            borderWidth: 2,
-            tension: 0.4,
-            fill: false,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#22c55e',
-            pointBorderColor: 'white',
-            pointBorderWidth: 2,
-            yAxisID: 'y2'
-        }
-    ];
-    
+    // Create a simple, clean single-line chart for Total Events
     charts.trend = new Chart(ctx, {
         type: 'line',
         data: {
             labels: displayLabels,
-            datasets: datasets
+            datasets: [
+                {
+                    label: 'Total Events',
+                    data: data_points.total_events || [],
+                    borderColor: '#1e40af',
+                    backgroundColor: 'rgba(30, 64, 175, 0.15)',
+                    borderWidth: 3,
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#1e40af',
+                    pointBorderColor: 'white',
+                    pointBorderWidth: 2,
+                    segment: {
+                        borderColor: ctx => ctx.p0DataIndex === undefined ? 'rgb(0,0,0,0)' : undefined,
+                    }
+                },
+                {
+                    label: 'Failed Logins',
+                    data: data_points.failed_logins || [],
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: '#ef4444',
+                    pointBorderColor: 'white',
+                    pointBorderWidth: 1
+                }
+            ]
         },
         options: {
             responsive: true,
@@ -1125,50 +1104,49 @@ function renderTrendChart(trendData, period = '30d') {
                     position: 'top',
                     labels: {
                         color: '#333',
-                        usePointStyle: true,
                         padding: 15,
-                        font: {size: 12, weight: '500'},
-                        generateLabels: function(chart) {
-                            return chart.data.datasets.map((dataset, i) => ({
-                                text: dataset.label,
-                                fillStyle: dataset.borderColor,
-                                strokeStyle: dataset.borderColor,
-                                lineWidth: 3,
-                                hidden: !chart.isDatasetVisible(i),
-                                index: i
-                            }));
-                        }
+                        font: {size: 13, weight: 'bold'},
+                        usePointStyle: true
                     }
                 },
                 tooltip: {
                     backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                    padding: 14,
-                    titleFont: {size: 13, weight: 'bold'},
-                    bodyFont: {size: 12},
+                    padding: 12,
+                    titleFont: {size: 12, weight: 'bold'},
+                    bodyFont: {size: 11},
                     borderColor: 'rgba(255, 255, 255, 0.3)',
                     borderWidth: 1,
                     displayColors: true,
                     callbacks: {
                         label: function(context) {
                             let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
-                            }
-                            // Add value with appropriate formatting
-                            if (label.includes('%')) {
-                                label += context.parsed.y.toFixed(1) + '%';
-                            } else {
-                                label += context.parsed.y.toLocaleString();
-                            }
+                            if (label) label += ': ';
+                            label += Math.round(context.parsed.y);
                             return label;
-                        },
-                        footer: function(context) {
-                            return '─ Left axis: Count | Right axis: Percentage';
                         }
                     }
                 }
             },
             scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Count',
+                        color: '#333',
+                        font: {weight: 'bold', size: 12}
+                    },
+                    ticks: {
+                        color: '#666',
+                        font: {size: 11}
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        drawBorder: false
+                    }
+                },
                 x: {
                     grid: {
                         color: 'rgba(0, 0, 0, 0.05)',
@@ -1178,46 +1156,6 @@ function renderTrendChart(trendData, period = '30d') {
                         color: '#666',
                         font: {size: 11}
                     }
-                },
-                y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    title: {
-                        display: true,
-                        text: 'Total Events',
-                        color: '#1e40af',
-                        font: {weight: 'bold', size: 12}
-                    },
-                    ticks: {color: '#1e40af', font: {weight: '600'}},
-                    grid: {color: 'rgba(30, 64, 175, 0.1)'}
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    title: {
-                        display: true,
-                        text: 'Failed Logins',
-                        color: '#ef4444',
-                        font: {weight: 'bold', size: 12}
-                    },
-                    ticks: {color: '#ef4444', font: {weight: '600'}},
-                    grid: {drawOnChartArea: false}
-                },
-                y2: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    offset: true,
-                    title: {
-                        display: true,
-                        text: 'Success Rate %',
-                        color: '#22c55e',
-                        font: {weight: 'bold', size: 12}
-                    },
-                    ticks: {color: '#22c55e', font: {weight: '600'}},
-                    grid: {drawOnChartArea: false}
                 }
             }
         }
