@@ -103,10 +103,14 @@ def main() -> None:
         timestamp = datetime.now().strftime(TIMESTAMP_FORMAT)
         filename = RESULTS_FILE_FORMAT.format(prefix=RESULTS_FILE_PREFIX, timestamp=timestamp)
         
-        with open(filename, 'w') as f:
+        # Save to src/ directory
+        src_dir = os.path.dirname(__file__)
+        filepath = os.path.join(src_dir, filename)
+        
+        with open(filepath, 'w') as f:
             json.dump(results, f, indent=2, default=str)
         
-        print(f"✅ Results saved to: {filename}")
+        print(f"✅ Results saved to: {filepath}")
         print("\n" + "=" * 70)
         print("🎉 Analysis Complete!")
         print("=" * 70)

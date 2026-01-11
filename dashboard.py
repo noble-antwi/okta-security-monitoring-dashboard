@@ -392,17 +392,33 @@ def fetch_fresh_data():
                 'message': f'main.py not found at {main_script}'
             }), 500
         
-        # Get the Python executable from the current environment
-        import sys
-        python_exe = sys.executable
+        # Get the Python executable from the venv
+        venv_python = Path(__file__).parent / 'venv' / 'bin' / 'python'
+        if not venv_python.exists():
+            # Fallback to current python
+            import sys
+            venv_python = Path(sys.executable)
         
-        # Run main.py as subprocess
+        logger.info(f"Using Python: {venv_python}")
+        logger.info(f"Running: {venv_python} {main_script}")
+        
+        # Get project root directory
+        project_root = Path(__file__).parent
+        logger.info(f"Working directory: {project_root}")
+        
+        # Run main.py as subprocess from project root
         result = subprocess.run(
-            [python_exe, str(main_script)],
+            [str(venv_python), str(main_script)],
             capture_output=True,
             text=True,
+            cwd=str(project_root),  # Run from project root
             timeout=120  # 2 minute timeout
         )
+        
+        logger.info(f"Return code: {result.returncode}")
+        logger.info(f"Stdout: {result.stdout[:500] if result.stdout else 'None'}")
+        if result.stderr:
+            logger.warning(f"Stderr: {result.stderr[:500]}")
         
         if result.returncode != 0:
             logger.error(f"Error running main.py: {result.stderr}")
