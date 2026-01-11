@@ -64,7 +64,7 @@ This project demonstrates:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/okta-security-monitoring-dashboard.git
+   git clone https://github.com/noble-antwi/okta-security-monitoring-dashboard.git
    cd okta-security-monitoring-dashboard
    ```
 
@@ -191,28 +191,6 @@ tests/test_okta_connector.py::TestOktaConnectorConnection::test_test_connection_
 tests/test_log_analyzer.py::TestFailedLoginAnalysis::test_analyze_failed_logins_suspicious_user PASSED
 ...
 ======================== 29 passed in 0.10s ========================
-```
-
-## Project Structure
-
-```
-okta-security-monitoring-dashboard/
-├── src/
-│   ├── __init__.py
-│   ├── config.py                    # Centralized configuration
-│   ├── okta_connector.py            # Okta API integration (16 tests)
-│   ├── log_analyzer.py              # Threat detection engine (13 tests)
-│   └── main.py                      # Main execution pipeline
-├── tests/
-│   ├── test_okta_connector.py       # Connector unit tests
-│   └── test_log_analyzer.py         # Analyzer unit tests
-├── requirements.txt                 # Python dependencies (15 packages)
-├── .env                             # Okta credentials (not in git)
-├── .gitignore                       # Git ignore rules
-├── README.md                        # This file
-└── docs/
-    └── [analysis reports]           # Generated JSON reports
-
 ```
 
 ## Code Quality Features
