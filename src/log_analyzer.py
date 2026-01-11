@@ -3,25 +3,37 @@ Okta Log Analyzer
 Analyzes authentication logs to detect security threats
 """
 
+import logging
 from datetime import datetime
 from collections import defaultdict
+from typing import Dict, List, Any
 import json
 
+from config import (
+    FAILED_LOGIN_THRESHOLD,
+    MFA_FAILURE_THRESHOLD,
+    RISK_LEVEL_CRITICAL,
+    RISK_LEVEL_HIGH,
+    RISK_LEVEL_MEDIUM
+)
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+
 class LogAnalyzer:
+    """Analyzes Okta logs for security threats and anomalies"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the analyzer with threat detection thresholds"""
         
-        # Thresholds for detecting threats
-        self.FAILED_LOGIN_THRESHOLD = 5  # 5+ failures = suspicious
-        self.TIME_WINDOW_MINUTES = 15     # Within 15 minutes
-        self.MFA_FAILURE_THRESHOLD = 3    # 3+ MFA failures = suspicious
+        self.failed_login_threshold = FAILED_LOGIN_THRESHOLD
+        self.mfa_failure_threshold = MFA_FAILURE_THRESHOLD
         
-        print("Log Analyzer initialized")
+        logger.info("Log Analyzer initialized")
     
-    def analyze_failed_logins(self, logs):
-        """
-        Detect users/IPs with excessive failed login attempts
+    def analyze_failed_logins(self, logs: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Detect users/IPs with excessive failed login attempts
         
         Args:
             logs: List of log events
@@ -29,11 +41,11 @@ class LogAnalyzer:
         Returns:
             dict: Users and IPs with suspicious failed login patterns
         """
-        print("\n🔍 Analyzing failed login patterns...")
+        logger.info("Analyzing failed login patterns...")
         
         # Track failures by user and IP
-        user_failures = defaultdict(list)
-        ip_failures = defaultdict(list)
+        user_failures: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+        ip_failures: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
         
         # Process each log event
         for log in logs:
@@ -67,7 +79,7 @@ class LogAnalyzer:
         
         # Check users with multiple failures
         for user, failures in user_failures.items():
-            if len(failures) >= self.FAILED_LOGIN_THRESHOLD:
+            if len(failures) >= self.failed_login_threshold:
                 suspicious_users[user] = {
                     'failure_count': len(failures),
                     'failures': failures,
@@ -76,24 +88,23 @@ class LogAnalyzer:
         
         # Check IPs with multiple failures
         for ip, failures in ip_failures.items():
-            if len(failures) >= self.FAILED_LOGIN_THRESHOLD:
+            if len(failures) >= self.failed_login_threshold:
                 suspicious_ips[ip] = {
                     'failure_count': len(failures),
                     'failures': failures,
                     'risk_level': self._calculate_risk_level(len(failures))
                 }
         
-        print(f"   Found {len(suspicious_users)} suspicious users")
-        print(f"   Found {len(suspicious_ips)} suspicious IPs")
+        logger.info(f"   Found {len(suspicious_users)} suspicious users")
+        logger.info(f"   Found {len(suspicious_ips)} suspicious IPs")
         
         return {
             'suspicious_users': suspicious_users,
             'suspicious_ips': suspicious_ips
         }
     
-    def analyze_mfa_events(self, logs):
-        """
-        Analyze MFA usage and detect issues
+    def analyze_mfa_events(self, logs: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Analyze MFA usage and detect issues
         
         Args:
             logs: List of log events
@@ -101,9 +112,9 @@ class LogAnalyzer:
         Returns:
             dict: MFA statistics and issues
         """
-        print("\n🔐 Analyzing MFA events...")
+        logger.info("Analyzing MFA events...")
         
-        mfa_stats = {
+        mfa_stats: Dict[str, Any] = {
             'total_challenges': 0,
             'successful': 0,
             'failed': 0,
@@ -141,20 +152,19 @@ class LogAnalyzer:
         suspicious_mfa_users = {
             user: count 
             for user, count in mfa_stats['users_with_failures'].items() 
-            if count >= self.MFA_FAILURE_THRESHOLD
+            if count >= self.mfa_failure_threshold
         }
         
         mfa_stats['suspicious_users'] = suspicious_mfa_users
         
-        print(f"   Total MFA challenges: {mfa_stats['total_challenges']}")
-        print(f"   Success rate: {mfa_stats['success_rate']}%")
-        print(f"   Users with multiple failures: {len(suspicious_mfa_users)}")
+        logger.info(f"   Total MFA challenges: {mfa_stats['total_challenges']}")
+        logger.info(f"   Success rate: {mfa_stats['success_rate']}%")
+        logger.info(f"   Users with multiple failures: {len(suspicious_mfa_users)}")
         
         return mfa_stats
     
-    def analyze_geographic_patterns(self, logs):
-        """
-        Detect logins from unusual locations
+    def analyze_geographic_patterns(self, logs: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Detect logins from unusual locations
         
         Args:
             logs: List of log events
@@ -162,9 +172,9 @@ class LogAnalyzer:
         Returns:
             dict: Geographic distribution of logins
         """
-        print("\n🌍 Analyzing geographic patterns...")
+        logger.info("Analyzing geographic patterns...")
         
-        location_data = defaultdict(lambda: {'count': 0, 'users': set()})
+        location_data: Dict[str, Dict[str, Any]] = defaultdict(lambda: {'count': 0, 'users': set()})
         
         for log in logs:
             event_type = log.get('eventType', '')
@@ -188,13 +198,12 @@ class LogAnalyzer:
         for location in location_data:
             location_data[location]['users'] = list(location_data[location]['users'])
         
-        print(f"   Logins from {len(location_data)} different locations")
+        logger.info(f"   Logins from {len(location_data)} different locations")
         
         return dict(location_data)
     
-    def generate_summary(self, logs):
-        """
-        Generate overall security summary
+    def generate_summary(self, logs: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Generate overall security summary
         
         Args:
             logs: List of log events
@@ -202,9 +211,9 @@ class LogAnalyzer:
         Returns:
             dict: Summary statistics
         """
-        print("\n📊 Generating security summary...")
+        logger.info("Generating security summary...")
         
-        summary = {
+        summary: Dict[str, Any] = {
             'total_events': len(logs),
             'total_authentications': 0,
             'successful_logins': 0,
@@ -247,9 +256,8 @@ class LogAnalyzer:
         
         return summary
     
-    def _calculate_risk_level(self, failure_count):
-        """
-        Calculate risk level based on failure count
+    def _calculate_risk_level(self, failure_count: int) -> str:
+        """Calculate risk level based on failure count
         
         Args:
             failure_count: Number of failures
@@ -257,18 +265,17 @@ class LogAnalyzer:
         Returns:
             str: Risk level (LOW, MEDIUM, HIGH, CRITICAL)
         """
-        if failure_count >= 20:
+        if failure_count >= RISK_LEVEL_CRITICAL:
             return 'CRITICAL'
-        elif failure_count >= 10:
+        elif failure_count >= RISK_LEVEL_HIGH:
             return 'HIGH'
-        elif failure_count >= 5:
+        elif failure_count >= RISK_LEVEL_MEDIUM:
             return 'MEDIUM'
         else:
             return 'LOW'
     
-    def run_full_analysis(self, logs):
-        """
-        Run complete security analysis on logs
+    def run_full_analysis(self, logs: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Run complete security analysis on logs
         
         Args:
             logs: List of log events
@@ -276,9 +283,9 @@ class LogAnalyzer:
         Returns:
             dict: Complete analysis results
         """
-        print("\n" + "="*60)
-        print("🔬 STARTING SECURITY ANALYSIS")
-        print("="*60)
+        logger.info("=" * 60)
+        logger.info("STARTING SECURITY ANALYSIS")
+        logger.info("=" * 60)
         
         results = {
             'summary': self.generate_summary(logs),
@@ -287,17 +294,23 @@ class LogAnalyzer:
             'geographic_patterns': self.analyze_geographic_patterns(logs)
         }
         
-        print("\n" + "="*60)
-        print("✅ ANALYSIS COMPLETE")
-        print("="*60)
+        logger.info("=" * 60)
+        logger.info("ANALYSIS COMPLETE")
+        logger.info("=" * 60)
         
         return results
 
 
 # Test the analyzer if running directly
 if __name__ == "__main__":
-    print("Testing Log Analyzer...\n")
+    # Configure logging for standalone execution
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    
+    logger.info("Testing Log Analyzer...\n")
     
     # This is just for testing the analyzer structure
-    print("Analyzer module loaded successfully!")
-    print("Run the main script to perform actual analysis.")
+    logger.info("Analyzer module loaded successfully!")
+    logger.info("Run the main script to perform actual analysis.")
