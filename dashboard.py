@@ -120,6 +120,8 @@ def get_analysis():
             total_mfa_denied = 0
             unique_users = set()
             unique_ips = set()
+            max_unique_users = 0
+            max_unique_ips = 0
             
             # Collect data from all files in the time range
             all_files = list(analyzer._get_analysis_files())
@@ -141,6 +143,10 @@ def get_analysis():
                 total_events += summary.get('total_events', 0)
                 total_success += summary.get('successful_logins', 0)
                 total_failed += summary.get('failed_logins', 0)
+                
+                # Track max unique users and IPs across all snapshots
+                max_unique_users = max(max_unique_users, summary.get('unique_users', 0))
+                max_unique_ips = max(max_unique_ips, summary.get('unique_ips', 0))
                 
                 # MFA data
                 mfa = analysis.get('mfa_analysis', {})
@@ -196,8 +202,8 @@ def get_analysis():
                     'successful_logins': total_success,
                     'failed_logins': total_failed,
                     'login_success_rate': login_success_rate,
-                    'unique_users': len(unique_users),
-                    'unique_ips': len(unique_ips)
+                    'unique_users': max_unique_users,
+                    'unique_ips': max_unique_ips
                 },
                 'mfa_analysis': {
                     'successful': total_mfa_success,
@@ -409,12 +415,70 @@ def fetch_fresh_data():
         # After successful fetch, reload and return new data
         analysis = get_latest_analysis()
         
+        # Transform analysis to dashboard format (same as /api/analysis endpoint)
+        failed_logins = analysis.get('failed_logins', {})
+        
+        # Convert suspicious_users dict to list
+        suspicious_users_list = []
+        for user, data in failed_logins.get('suspicious_users', {}).items():
+            suspicious_users_list.append({
+                'user': user,
+                'failure_count': data.get('failure_count', 0),
+                'risk_level': data.get('risk_level', 'low')
+            })
+        
+        # Convert suspicious_ips dict to list
+        suspicious_ips_list = []
+        for ip, data in failed_logins.get('suspicious_ips', {}).items():
+            suspicious_ips_list.append({
+                'ip': ip,
+                'failure_count': data.get('failure_count', 0),
+                'risk_level': data.get('risk_level', 'low')
+            })
+        
+        # Convert geographic_patterns dict to list
+        geo_patterns = analysis.get('geographic_patterns', {})
+        if isinstance(geo_patterns, dict):
+            geo_list = []
+            for location, data in geo_patterns.items():
+                geo_list.append({
+                    'location': location,
+                    'count': data.get('count', 0) if isinstance(data, dict) else data,
+                    'users': data.get('users', []) if isinstance(data, dict) else []
+                })
+        else:
+            geo_list = geo_patterns
+        
+        # MFA suspicious users
+        mfa_suspicious = []
+        mfa_analysis = analysis.get('mfa_analysis', {})
+        for user, count in mfa_analysis.get('suspicious_users', {}).items():
+            mfa_suspicious.append({
+                'user': user,
+                'failure_count': count
+            })
+        
+        transformed_data = {
+            'summary': analysis.get('summary', {}),
+            'suspicious_users': suspicious_users_list,
+            'suspicious_ips': suspicious_ips_list,
+            'mfa_analysis': {
+                'successful': mfa_analysis.get('successful', 0),
+                'failed': mfa_analysis.get('failed', 0),
+                'denied': mfa_analysis.get('denied', 0),
+                'success_rate': mfa_analysis.get('success_rate', 0),
+                'total_challenges': mfa_analysis.get('total_challenges', 0)
+            },
+            'mfa_suspicious_users': mfa_suspicious,
+            'geographic_patterns': geo_list
+        }
+        
         logger.info("Fresh data fetch completed successfully")
         
         return jsonify({
             'status': 'success',
             'message': 'Fresh data fetched from Okta successfully',
-            'data': analysis,
+            'data': transformed_data,
             'timestamp': datetime.now().isoformat()
         }), 200
         
