@@ -279,6 +279,9 @@ async function loadDataWithDateRange(hours) {
     
     // Re-render everything
     renderDashboard(dashboardData);
+    
+    // Also update trends chart with the new time range
+    updateTrendForTimeRange(hours);
 }
 
 /**
@@ -911,23 +914,75 @@ document.addEventListener('DOMContentLoaded', () => {
 }, 5 * 60 * 1000);
 
 /**
- * Load and render trend data (7-day or 30-day)
+ * Load and render trend data (24h, 7-day, or 30-day)
  */
+/**
+ * Update trends chart based on main time range selection
+ */
+async function updateTrendForTimeRange(hours) {
+    // Map hours to trend period
+    let period = '30d'; // default
+    
+    if (hours === 24) {
+        period = '24h';
+    } else if (hours === 168) {
+        period = '7d';
+    } else if (hours === 720) {
+        period = '30d';
+    } else {
+        // For custom hours, map to nearest period
+        const days = Math.floor(hours / 24);
+        if (days <= 1) period = '24h';
+        else if (days <= 7) period = '7d';
+        else period = '30d';
+    }
+    
+    await loadTrendData(period);
+}
+
 async function loadTrendData(period = '30d') {
     try {
-        const endpoint = period === '7d' ? '/api/trends/7d' : '/api/trends/30d';
+        // Show loading state
+        const chartContainer = document.querySelector('.trend-chart-container');
+        if (chartContainer) {
+            chartContainer.classList.add('loading');
+        }
+        
+        // Map period to endpoint
+        const endpointMap = {
+            '24h': '/api/analysis',  // Use main analysis endpoint for 24h
+            '7d': '/api/trends/7d',
+            '30d': '/api/trends/30d'
+        };
+        
+        const endpoint = endpointMap[period] || endpointMap['30d'];
         const response = await fetch(endpoint);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
-        const trendData = await response.json();
-        renderTrendChart(trendData);
+        const data = await response.json();
+        
+        // For 24h, convert main analysis format to trend format
+        let trendData;
+        if (period === '24h') {
+            trendData = convertAnalysisToTrendData(data);
+        } else {
+            trendData = data;
+        }
+        
+        renderTrendChart(trendData, period);
         updateTrendStats(trendData);
+        updateChartInfo(period, trendData);
         
         // Update active button
-        document.querySelectorAll('.trend-btn').forEach(btn => {
+        document.querySelectorAll('.trend-btn[data-period]').forEach(btn => {
             btn.classList.remove('active');
         });
         document.querySelector(`.trend-btn[data-period="${period}"]`)?.classList.add('active');
+        
+        // Remove loading state
+        if (chartContainer) {
+            chartContainer.classList.remove('loading');
+        }
         
     } catch (error) {
         console.error('Error loading trend data:', error);
@@ -936,9 +991,56 @@ async function loadTrendData(period = '30d') {
 }
 
 /**
+ * Convert main analysis data to trend format for 24h display
+ */
+function convertAnalysisToTrendData(analysis) {
+    const summary = analysis.summary || {};
+    const now = new Date();
+    const timestamp = now.toISOString();
+    
+    return {
+        trend_type: 'last_24h',
+        timestamps: [timestamp],
+        data_points: {
+            total_events: [summary.total_events || 0],
+            failed_logins: [summary.failed_logins || 0],
+            successful_logins: [summary.successful_logins || 0],
+            unique_users: [summary.unique_users || 0],
+            login_success_rate: [summary.login_success_rate || 0]
+        },
+        summary: {
+            min_events: summary.total_events || 0,
+            max_events: summary.total_events || 0,
+            avg_events: summary.total_events || 0,
+            min_failures: summary.failed_logins || 0,
+            max_failures: summary.failed_logins || 0,
+            avg_failures: summary.failed_logins || 0,
+            data_points_count: 1
+        }
+    };
+}
+
+/**
+ * Update chart info header based on period
+ */
+function updateChartInfo(period, trendData) {
+    const infoEl = document.getElementById('trendChartInfo');
+    if (!infoEl) return;
+    
+    const dataPoints = trendData.summary?.data_points_count || 1;
+    const labels = {
+        '24h': `Last 24 hours (${dataPoints} data point)`,
+        '7d': `Last 7 days (${dataPoints} data points)`,
+        '30d': `Last 30 days (${dataPoints} data points)`
+    };
+    
+    infoEl.textContent = labels[period] || 'Trend data';
+}
+
+/**
  * Render Chart.js line chart for trends
  */
-function renderTrendChart(trendData) {
+function renderTrendChart(trendData, period = '30d') {
     const ctx = document.getElementById('trendChart');
     if (!ctx) return;
     
@@ -949,60 +1051,84 @@ function renderTrendChart(trendData) {
     
     const {timestamps, data_points} = trendData;
     
+    if (!timestamps || !data_points) {
+        console.error('Invalid trend data format');
+        return;
+    }
+    
     // Format timestamps for display (show every Nth label to avoid crowding)
-    const labelStep = Math.ceil(timestamps.length / 8);
+    const labelStep = Math.max(1, Math.ceil(timestamps.length / 8));
     const displayLabels = timestamps.map((ts, i) => {
         if (i % labelStep === 0) {
             const date = new Date(ts);
-            return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric', hour: '2-digit'});
+            if (period === '24h') {
+                return date.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
+            } else {
+                return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric', hour: '2-digit'});
+            }
         }
         return '';
     });
+    
+    // Determine if we have enough data to show all 3 lines
+    const hasData = data_points.total_events && data_points.total_events.length > 0;
+    
+    const datasets = [
+        {
+            label: 'Total Events',
+            data: data_points.total_events || [],
+            borderColor: '#1e40af',
+            backgroundColor: 'rgba(30, 64, 175, 0.1)',
+            borderWidth: 3,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            pointBackgroundColor: '#1e40af',
+            pointBorderColor: 'white',
+            pointBorderWidth: 2,
+            yAxisID: 'y',
+            segment: {
+                borderColor: ctx => ctx.p0DataIndex === undefined ? 'rgb(0,0,0,0)' : undefined,
+            }
+        },
+        {
+            label: 'Failed Logins',
+            data: data_points.failed_logins || [],
+            borderColor: '#ef4444',
+            backgroundColor: 'rgba(239, 68, 68, 0.05)',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: false,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#ef4444',
+            pointBorderColor: 'white',
+            pointBorderWidth: 2,
+            yAxisID: 'y1'
+        },
+        {
+            label: 'Success Rate %',
+            data: data_points.login_success_rate || [],
+            borderColor: '#22c55e',
+            backgroundColor: 'rgba(34, 197, 94, 0.05)',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: false,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#22c55e',
+            pointBorderColor: 'white',
+            pointBorderWidth: 2,
+            yAxisID: 'y2'
+        }
+    ];
     
     charts.trend = new Chart(ctx, {
         type: 'line',
         data: {
             labels: displayLabels,
-            datasets: [
-                {
-                    label: 'Total Events',
-                    data: data_points.total_events,
-                    borderColor: '#1e40af',
-                    backgroundColor: 'rgba(30, 64, 175, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.3,
-                    fill: true,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#1e40af',
-                    pointBorderColor: 'white',
-                    pointBorderWidth: 2,
-                    yAxisID: 'y'
-                },
-                {
-                    label: 'Failed Logins',
-                    data: data_points.failed_logins,
-                    borderColor: '#ef4444',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.3,
-                    fill: false,
-                    pointRadius: 3,
-                    pointBackgroundColor: '#ef4444',
-                    yAxisID: 'y1'
-                },
-                {
-                    label: 'Success Rate %',
-                    data: data_points.login_success_rate,
-                    borderColor: '#22c55e',
-                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.3,
-                    fill: false,
-                    pointRadius: 3,
-                    pointBackgroundColor: '#22c55e',
-                    yAxisID: 'y2'
-                }
-            ]
+            datasets: datasets
         },
         options: {
             responsive: true,
@@ -1018,16 +1144,32 @@ function renderTrendChart(trendData) {
                         color: '#333',
                         usePointStyle: true,
                         padding: 15,
-                        font: {size: 12, weight: '500'}
+                        font: {size: 12, weight: '500'},
+                        generateLabels: function(chart) {
+                            return chart.data.datasets.map((dataset, i) => ({
+                                text: dataset.label,
+                                fillStyle: dataset.borderColor,
+                                strokeStyle: dataset.borderColor,
+                                lineWidth: 3,
+                                hidden: !chart.isDatasetVisible(i),
+                                index: i
+                            }));
+                        }
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    padding: 12,
-                    titleFont: {size: 12, weight: 'bold'},
-                    bodyFont: {size: 11},
-                    borderColor: 'rgba(255, 255, 255, 0.2)',
-                    borderWidth: 1
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    padding: 14,
+                    titleFont: {size: 13, weight: 'bold'},
+                    bodyFont: {size: 12},
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    borderWidth: 1,
+                    displayColors: true,
+                    callbacks: {
+                        footer: function(context) {
+                            return 'Click to see more details';
+                        }
+                    }
                 }
             },
             scales: {
@@ -1049,9 +1191,9 @@ function renderTrendChart(trendData) {
                         display: true,
                         text: 'Total Events',
                         color: '#1e40af',
-                        font: {weight: 'bold'}
+                        font: {weight: 'bold', size: 12}
                     },
-                    ticks: {color: '#1e40af'},
+                    ticks: {color: '#1e40af', font: {weight: '600'}},
                     grid: {color: 'rgba(30, 64, 175, 0.1)'}
                 },
                 y1: {
@@ -1062,9 +1204,9 @@ function renderTrendChart(trendData) {
                         display: true,
                         text: 'Failed Logins',
                         color: '#ef4444',
-                        font: {weight: 'bold'}
+                        font: {weight: 'bold', size: 12}
                     },
-                    ticks: {color: '#ef4444'},
+                    ticks: {color: '#ef4444', font: {weight: '600'}},
                     grid: {drawOnChartArea: false}
                 },
                 y2: {
@@ -1076,9 +1218,9 @@ function renderTrendChart(trendData) {
                         display: true,
                         text: 'Success Rate %',
                         color: '#22c55e',
-                        font: {weight: 'bold'}
+                        font: {weight: 'bold', size: 12}
                     },
-                    ticks: {color: '#22c55e'},
+                    ticks: {color: '#22c55e', font: {weight: '600'}},
                     grid: {drawOnChartArea: false}
                 }
             }
@@ -1152,14 +1294,6 @@ function updateChangeIndicator(elementId, changeData) {
 }
 
 /**
- * Handle trend period button clicks
+ * Handle trend period button clicks (removed - trends now follow main time picker)
  */
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.trend-btn[data-period]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const period = btn.getAttribute('data-period');
-            loadTrendData(period);
-        });
-    });
-});
 

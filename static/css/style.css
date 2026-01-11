@@ -877,9 +877,11 @@ section {
     color: var(--primary);
 }
 
-.trend-controls {
-    display: flex;
-    gap: var(--spacing-sm);
+.trend-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin: 0;
 }
 
 .trend-btn {
@@ -915,6 +917,31 @@ section {
     border-radius: var(--border-radius);
     margin-bottom: var(--spacing-lg);
     border: 1px solid var(--border-color);
+    position: relative;
+    transition: all var(--transition);
+}
+
+.trend-chart-container.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.trend-chart-container.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(30, 64, 175, 0.1);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 .chart-header {
