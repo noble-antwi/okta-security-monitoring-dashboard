@@ -85,29 +85,6 @@
                 </div>
             </section>
 
-            <!-- Filter & Export Bar -->
-            <section class="controls-section">
-                <div class="controls-left">
-                    <span class="controls-label">Filter:</span>
-                    <button class="filter-btn active" data-filter="all">
-                        <i class="fas fa-bars"></i> All Events
-                    </button>
-                    <span class="filter-info" id="filterInfo"></span>
-                </div>
-                <div class="controls-right">
-                    <span class="controls-label">Export:</span>
-                    <button class="export-btn" id="exportPdfBtn" title="Download as PDF">
-                        <i class="fas fa-file-pdf"></i> PDF
-                    </button>
-                    <button class="export-btn" id="exportCsvBtn" title="Download as CSV">
-                        <i class="fas fa-file-csv"></i> CSV
-                    </button>
-                    <button class="export-btn" id="printBtn" title="Print Report">
-                        <i class="fas fa-print"></i> Print
-                    </button>
-                </div>
-            </section>
-
             <!-- KPI Cards Section -->
             <section class="kpi-section">
                 <div class="kpi-grid">
@@ -182,10 +159,10 @@
                     </div>
 
                     <!-- MFA Statistics Chart -->
-                    <div class="chart-container">
+                    <div class="chart-container chart-wide">
                         <div class="chart-header">
                             <h2>MFA Analysis</h2>
-                            <span class="chart-subtitle">Challenge Success & Failure <i class="fas fa-info-circle" title="Successful: MFA passed | Failed: Wrong code | Denied: User rejected challenge"></i></span>
+                            <span class="chart-subtitle">Challenge Success, Failure & Denied <i class="fas fa-info-circle" title="✓ Successful: User completed MFA challenge correctly | ✗ Failed: User entered wrong code/failed verification | ⊘ Denied: User actively rejected the MFA challenge (clicked Deny/Reject button)"></i></span>
                         </div>
                         <div class="chart-wrapper">
                             <canvas id="mfaChart"></canvas>

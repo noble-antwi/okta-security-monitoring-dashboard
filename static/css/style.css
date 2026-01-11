@@ -702,6 +702,10 @@ section {
     grid-column: 1 / -1;
 }
 
+.chart-wide {
+    grid-column: span 2;
+}
+
 .chart-container {
     background-color: var(--bg-primary);
     border-radius: var(--radius-lg);
