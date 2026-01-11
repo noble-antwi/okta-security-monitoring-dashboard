@@ -1,0 +1,325 @@
+{
+  "summary": {
+    "total_events": 91,
+    "total_authentications": 45,
+    "successful_logins": 18,
+    "failed_logins": 26,
+    "unique_users": 4,
+    "unique_ips": 4,
+    "login_success_rate": 40.0
+  },
+  "failed_logins": {
+    "suspicious_users": {
+      "kofi.kofi@biira.online": {
+        "failure_count": 26,
+        "failures": [
+          {
+            "time": "2026-01-11T06:02:32.971Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:32.421Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:31.741Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:31.057Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:30.344Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:29.864Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:29.340Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:28.699Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:27.670Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:27.136Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:26.524Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:25.970Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:10.496Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:09.858Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:08.707Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:08.286Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:07.645Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:06.821Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:04.699Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:04.254Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:03.718Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:03.115Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:02.494Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:01.515Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:00.592Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:01:59.421Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          }
+        ],
+        "risk_level": "CRITICAL"
+      }
+    },
+    "suspicious_ips": {
+      "73.211.237.50": {
+        "failure_count": 26,
+        "failures": [
+          {
+            "time": "2026-01-11T06:02:32.971Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:32.421Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:31.741Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:31.057Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:30.344Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:29.864Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:29.340Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:28.699Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:27.670Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:27.136Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:26.524Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:25.970Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:10.496Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:09.858Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:08.707Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:08.286Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:07.645Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:06.821Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:04.699Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:04.254Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:03.718Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:03.115Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:02.494Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:01.515Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:02:00.592Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          },
+          {
+            "time": "2026-01-11T06:01:59.421Z",
+            "ip": "73.211.237.50",
+            "reason": "INVALID_CREDENTIALS"
+          }
+        ],
+        "risk_level": "CRITICAL"
+      }
+    }
+  },
+  "mfa_analysis": {
+    "total_challenges": 45,
+    "successful": 18,
+    "failed": 26,
+    "denied": 0,
+    "users_with_failures": {
+      "kofi.kofi@biira.online": 26
+    },
+    "success_rate": 40.0,
+    "suspicious_users": {
+      "kofi.kofi@biira.online": 26
+    }
+  },
+  "geographic_patterns": {
+    "Chicago, United States": {
+      "count": 41,
+      "users": [
+        "andrew.lewis@biira.online",
+        "marcus.johnson@biira.online",
+        "kofi.kofi@biira.online",
+        "krista.scott@biira.online"
+      ]
+    },
+    "Boardman, United States": {
+      "count": 3,
+      "users": [
+        "andrew.lewis@biira.online"
+      ]
+    },
+    "Unknown, Unknown": {
+      "count": 1,
+      "users": [
+        "kofi.kofi@biira.online"
+      ]
+    }
+  }
+}

@@ -181,10 +181,11 @@ class LogAnalyzer:
             
             # Check for authentication events
             if 'authentication' in event_type.lower():
-                # Get location info
-                location = log.get('client', {}).get('geographicalContext', {})
-                city = location.get('city', 'Unknown')
-                country = location.get('country', 'Unknown')
+                # Get location info - handle None cases
+                client = log.get('client', {}) or {}
+                location = client.get('geographicalContext') or {}
+                city = location.get('city', 'Unknown') if location else 'Unknown'
+                country = location.get('country', 'Unknown') if location else 'Unknown'
                 
                 # Get user
                 user = log.get('actor', {}).get('alternateId', 'Unknown')

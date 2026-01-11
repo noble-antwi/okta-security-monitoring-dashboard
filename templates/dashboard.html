@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Okta Security Monitoring Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1 class="header-title">
+                    <i class="fas fa-shield-alt"></i> Okta Security Monitoring Dashboard
+                </h1>
+                <p class="header-subtitle">Real-time Authentication Analytics & Threat Detection</p>
+            </div>
+            <div class="header-center">
+                <div class="security-score-badge" id="securityScore">
+                    <div class="score-value" id="scoreValue">-</div>
+                    <div class="score-label">Risk Score</div>
+                </div>
+                <div class="status-indicators">
+                    <div class="status-item">
+                        <i class="fas fa-circle" id="connectionStatus"></i>
+                        <span id="connectionText">Connected</span>
+                    </div>
+                    <div class="status-item">
+                        <i class="fas fa-sync-alt" id="syncIcon"></i>
+                        <span id="syncTimer">Auto-refresh in 5:00</span>
+                    </div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="last-updated">
+                    Last Updated: <span id="lastUpdated">Loading...</span>
+                </div>
+                <button class="btn btn-primary" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <button class="btn btn-fetch-data" id="fetchFreshBtn">
+                    <i class="fas fa-cloud-download-alt"></i> Fetch Fresh Data
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-container">
+            <div class="spinner"></div>
+            <p>Loading analysis data...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="error-container" style="display: none;">
+            <div class="error-content">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h2>No Analysis Data Available</h2>
+                <p id="errorMessage">Please run the analysis first using: <code>python src/main.py</code></p>
+            </div>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboardContent" style="display: none;">
+            <!-- Date Range Bar -->
+            <section class="date-range-section">
+                <div class="date-controls">
+                    <span class="controls-label">Time Range:</span>
+                    <button class="date-btn active" data-hours="24">
+                        <i class="fas fa-clock"></i> Last 24h
+                    </button>
+                    <button class="date-btn" data-hours="168">
+                        <i class="fas fa-calendar-week"></i> Last 7 days
+                    </button>
+                    <button class="date-btn" data-hours="720">
+                        <i class="fas fa-calendar-alt"></i> Last 30 days
+                    </button>
+                    <div class="custom-date-picker">
+                        <input type="number" id="customHours" placeholder="Hours" min="1" max="8760">
+                        <button class="date-btn" id="applyCustomBtn">
+                            <i class="fas fa-check"></i> Apply
+                        </button>
+                    </div>
+                    <span class="date-info" id="dateInfo">Showing last 24 hours</span>
+                </div>
+            </section>
+
+            <!-- Filter & Export Bar -->
+            <section class="controls-section">
+                <div class="controls-left">
+                    <span class="controls-label">Filter:</span>
+                    <button class="filter-btn active" data-filter="all">
+                        <i class="fas fa-bars"></i> All Events
+                    </button>
+                    <button class="filter-btn" data-filter="suspicious">
+                        <i class="fas fa-exclamation-circle"></i> Suspicious Only
+                    </button>
+                    <button class="filter-btn" data-filter="mfa">
+                        <i class="fas fa-key"></i> MFA Failures
+                    </button>
+                    <span class="filter-info" id="filterInfo"></span>
+                </div>
+                <div class="controls-right">
+                    <span class="controls-label">Export:</span>
+                    <button class="export-btn" id="exportPdfBtn" title="Download as PDF">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
+                    <button class="export-btn" id="exportCsvBtn" title="Download as CSV">
+                        <i class="fas fa-file-csv"></i> CSV
+                    </button>
+                    <button class="export-btn" id="printBtn" title="Print Report">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                </div>
+            </section>
+
+            <!-- KPI Cards Section -->
+            <section class="kpi-section">
+                <div class="kpi-grid">
+                    <div class="kpi-card kpi-primary">
+                        <div class="kpi-header">
+                            <h3>Total Events</h3>
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="kpi-value" id="kpiTotalEvents">0</div>
+                        <div class="kpi-footer">Authentication logs analyzed</div>
+                    </div>
+
+                    <div class="kpi-card kpi-success">
+                        <div class="kpi-header">
+                            <h3>Success Rate</h3>
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="kpi-value" id="kpiSuccessRate">0%</div>
+                        <div class="kpi-footer">Successful authentications</div>
+                    </div>
+
+                    <div class="kpi-card kpi-warning">
+                        <div class="kpi-header">
+                            <h3>Failed Logins</h3>
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="kpi-value" id="kpiFailedLogins">0</div>
+                        <div class="kpi-footer">Failed authentication attempts</div>
+                    </div>
+
+                    <div class="kpi-card kpi-info">
+                        <div class="kpi-header">
+                            <h3>MFA Rate</h3>
+                            <i class="fas fa-key"></i>
+                        </div>
+                        <div class="kpi-value" id="kpiMFARate">0%</div>
+                        <div class="kpi-footer">MFA challenge success rate</div>
+                    </div>
+
+                    <div class="kpi-card kpi-info">
+                        <div class="kpi-header">
+                            <h3>Unique Users</h3>
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="kpi-value" id="kpiUniqueUsers">0</div>
+                        <div class="kpi-footer">Distinct user accounts</div>
+                    </div>
+
+                    <div class="kpi-card kpi-info">
+                        <div class="kpi-header">
+                            <h3>Unique IPs</h3>
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="kpi-value" id="kpiUniqueIPs">0</div>
+                        <div class="kpi-footer">Distinct access locations</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Charts Section -->
+            <section class="charts-section">
+                <div class="charts-grid">
+                    <!-- Login Status Chart -->
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h2>Authentication Status</h2>
+                            <span class="chart-subtitle">Success vs Failure Distribution</span>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="loginStatusChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- MFA Statistics Chart -->
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h2>MFA Analysis</h2>
+                            <span class="chart-subtitle">Challenge Success & Failure</span>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="mfaChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Geographic Distribution Chart -->
+                    <div class="chart-container chart-full">
+                        <div class="chart-header">
+                            <h2>Geographic Distribution</h2>
+                            <span class="chart-subtitle">Login locations by frequency</span>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="geographicChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Security Alerts Section -->
+            <section class="alerts-section">
+                <div class="alerts-container">
+                    <!-- Suspicious Users -->
+                    <div class="alert-card">
+                        <div class="alert-header critical">
+                            <h2><i class="fas fa-user-slash"></i> Suspicious Users</h2>
+                            <span class="alert-count" id="suspiciousUserCount">0</span>
+                        </div>
+                        <div class="alert-content">
+                            <div id="suspiciousUsersContainer" class="threat-list">
+                                <p class="no-threats">✅ No suspicious user activity detected</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Suspicious IPs -->
+                    <div class="alert-card">
+                        <div class="alert-header warning">
+                            <h2><i class="fas fa-network-wired"></i> Suspicious IPs</h2>
+                            <span class="alert-count" id="suspiciousIPCount">0</span>
+                        </div>
+                        <div class="alert-content">
+                            <div id="suspiciousIPsContainer" class="threat-list">
+                                <p class="no-threats">✅ No suspicious IP activity detected</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MFA Anomalies -->
+                    <div class="alert-card">
+                        <div class="alert-header warning">
+                            <h2><i class="fas fa-exclamation-circle"></i> MFA Anomalies</h2>
+                            <span class="alert-count" id="mfaAnomalyCount">0</span>
+                        </div>
+                        <div class="alert-content">
+                            <div id="mfaAnomaliesContainer" class="threat-list">
+                                <p class="no-threats">✅ No MFA anomalies detected</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Data Tables Section -->
+            <section class="tables-section">
+                <!-- Top Locations Table -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2><i class="fas fa-globe"></i> Top Login Locations</h2>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Location</th>
+                                <th>Login Count</th>
+                                <th>Unique Users</th>
+                            </tr>
+                        </thead>
+                        <tbody id="locationsTableBody">
+                            <tr>
+                                <td colspan="3" class="empty-state">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Threat Summary Table -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2><i class="fas fa-exclamation-triangle"></i> Risk Assessment Summary</h2>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Value</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="riskTableBody">
+                            <tr>
+                                <td colspan="3" class="empty-state">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2026 Okta Security Monitoring Dashboard | Phase 3: Web Visualization</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
