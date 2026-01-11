@@ -92,12 +92,6 @@
                     <button class="filter-btn active" data-filter="all">
                         <i class="fas fa-bars"></i> All Events
                     </button>
-                    <button class="filter-btn" data-filter="suspicious">
-                        <i class="fas fa-exclamation-circle"></i> Suspicious Only
-                    </button>
-                    <button class="filter-btn" data-filter="mfa">
-                        <i class="fas fa-key"></i> MFA Failures
-                    </button>
                     <span class="filter-info" id="filterInfo"></span>
                 </div>
                 <div class="controls-right">
@@ -191,7 +185,7 @@
                     <div class="chart-container">
                         <div class="chart-header">
                             <h2>MFA Analysis</h2>
-                            <span class="chart-subtitle">Challenge Success & Failure</span>
+                            <span class="chart-subtitle">Challenge Success & Failure <i class="fas fa-info-circle" title="Successful: MFA passed | Failed: Wrong code | Denied: User rejected challenge"></i></span>
                         </div>
                         <div class="chart-wrapper">
                             <canvas id="mfaChart"></canvas>

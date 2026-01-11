@@ -41,6 +41,21 @@ async function loadAnalysisData(hours = 24) {
     try {
         const url = hours === 24 ? '/api/analysis' : `/api/analysis?hours=${hours}`;
         const response = await fetch(url);
+        
+        // Handle 404 (no data available) gracefully
+        if (response.status === 404) {
+            console.warn(`No data available for ${hours} hours`);
+            // Return empty object instead of error
+            return {
+                summary: {},
+                mfa_analysis: { successful: 0, failed: 0, denied: 0, success_rate: 0 },
+                suspicious_users: [],
+                mfa_suspicious_users: [],
+                suspicious_ips: [],
+                geographic_patterns: []
+            };
+        }
+        
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return await response.json();
     } catch (error) {

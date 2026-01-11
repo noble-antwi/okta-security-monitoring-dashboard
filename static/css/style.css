@@ -730,11 +730,26 @@ section {
 .chart-subtitle {
     font-size: 12px;
     color: var(--text-light);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.chart-subtitle .fa-info-circle {
+    font-size: 11px;
+    color: var(--primary);
+    cursor: help;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.chart-subtitle .fa-info-circle:hover {
+    opacity: 1;
 }
 
 .chart-wrapper {
     position: relative;
-    height: 300px;
+    height: 450px;
 }
 
 /* ================================================================
