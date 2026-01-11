@@ -968,6 +968,15 @@ async function loadInsights(hours = 720) {
         const data = await response.json();
         console.log(`Fetched analysis data:`, data);
         
+        // Update all dashboard sections with new data
+        updateKPICards(data);
+        renderLoginStatusChart(data);
+        renderMFAChart(data);
+        renderGeographicChart(data);
+        updateSuspiciousUsers(data);
+        updateSuspiciousIPs(data);
+        updateMFAAnomalies(data);
+        
         // Display the insights
         renderInsights(data, hours);
         
@@ -1124,7 +1133,7 @@ function renderSuspiciousActivities(analysisData) {
             item.className = 'suspicious-item';
             const failureCount = ip.failure_count || 0;
             item.innerHTML = `
-                <div class="suspicious-name">🌐 ${ip.ip_address}</div>
+                <div class="suspicious-name">🌐 ${ip.ip}</div>
                 <div class="suspicious-detail">${failureCount} failed attempt${failureCount !== 1 ? 's' : ''}</div>
             `;
             suspiciousIpsList.appendChild(item);

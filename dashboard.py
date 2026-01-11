@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
 # Configuration
-ANALYSIS_RESULTS_DIR = os.path.dirname(os.path.abspath(__file__))
+ANALYSIS_RESULTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src')
 
 
 def get_latest_analysis() -> Dict[str, Any]:
@@ -53,66 +53,6 @@ def get_latest_analysis() -> Dict[str, Any]:
         logger.error(f"Error loading analysis results: {str(e)}")
         return {}
 
-
-def transform_analysis_for_dashboard(analysis: Dict[str, Any]) -> Dict[str, Any]:
-    """Transform raw analysis data into dashboard-friendly format
-    
-    Args:
-        analysis: Raw analysis results from main.py
-        
-    Returns:
-        dict: Transformed data for dashboard consumption
-    """
-    if not analysis:
-        return {}
-    
-    summary = analysis.get('summary', {})
-    failed_logins = analysis.get('failed_logins', {})
-    mfa_analysis = analysis.get('mfa_analysis', {})
-    geographic = analysis.get('geographic_patterns', {})
-    
-    # Transform suspicious data for dashboard
-    suspicious_users_list = []
-    for user, data in failed_logins.get('suspicious_users', {}).items():
-        suspicious_users_list.append({
-            'user': user,
-            'failure_count': data.get('failure_count', 0),
-            'risk_level': data.get('risk_level', 'LOW')
-        })
-    
-    suspicious_ips_list = []
-    for ip, data in failed_logins.get('suspicious_ips', {}).items():
-        suspicious_ips_list.append({
-            'ip': ip,
-            'failure_count': data.get('failure_count', 0),
-            'risk_level': data.get('risk_level', 'LOW')
-        })
-    
-    mfa_suspicious_users = []
-    for user, count in mfa_analysis.get('suspicious_users', {}).items():
-        mfa_suspicious_users.append({
-            'user': user,
-            'failure_count': count
-        })
-    
-    # Transform geographic data
-    geographic_list = []
-    for location, data in geographic.items():
-        geographic_list.append({
-            'location': location,
-            'count': data.get('count', 0),
-            'users': data.get('users', [])
-        })
-    
-    return {
-        'summary': summary,
-        'suspicious_users': suspicious_users_list,
-        'suspicious_ips': suspicious_ips_list,
-        'mfa_analysis': mfa_analysis,
-        'mfa_suspicious_users': mfa_suspicious_users,
-        'geographic_patterns': geographic_list,
-        'last_updated': datetime.now().isoformat()
-    }
 
 
 @app.route('/')
@@ -182,19 +122,25 @@ def get_analysis():
             unique_ips = set()
             
             # Collect data from all files in the time range
-            for ts, path in analyzer._get_analysis_files():
+            all_files = list(analyzer._get_analysis_files())
+            
+            file_count = 0
+            skipped_count = 0
+            for ts, path in all_files:
                 if not analyzer._is_within_hours(ts, hours):
+                    skipped_count += 1
                     continue
                 
                 analysis = analyzer._load_analysis(path)
                 if not analysis:
                     continue
                 
+                file_count += 1
+                
                 summary = analysis.get('summary', {})
                 total_events += summary.get('total_events', 0)
                 total_success += summary.get('successful_logins', 0)
                 total_failed += summary.get('failed_logins', 0)
-                unique_users.update(summary.get('unique_users', []) if isinstance(summary.get('unique_users'), (list, set)) else [])
                 
                 # MFA data
                 mfa = analysis.get('mfa_analysis', {})
@@ -205,6 +151,7 @@ def get_analysis():
                 # Suspicious users
                 for user in analysis.get('suspicious_users', []):
                     u = user.get('user', 'unknown')
+                    unique_users.add(u)
                     if u not in all_suspicious_users:
                         all_suspicious_users[u] = user
                     else:
@@ -212,6 +159,7 @@ def get_analysis():
                 
                 for user in analysis.get('mfa_suspicious_users', []):
                     u = user.get('user', 'unknown')
+                    unique_users.add(u)
                     if u not in all_suspicious_users:
                         all_suspicious_users[u] = user
                     else:
@@ -219,7 +167,8 @@ def get_analysis():
                 
                 # Suspicious IPs
                 for ip_data in analysis.get('suspicious_ips', []):
-                    ip = ip_data.get('ip_address', 'unknown')
+                    ip = ip_data.get('ip', 'unknown')
+                    unique_ips.add(ip)
                     if ip not in all_suspicious_ips:
                         all_suspicious_ips[ip] = ip_data
                     else:
@@ -227,6 +176,8 @@ def get_analysis():
                 
                 # Geographic patterns
                 for geo in analysis.get('geographic_patterns', []):
+                    if not isinstance(geo, dict):
+                        continue
                     location = geo.get('location', 'unknown')
                     if location not in all_geo_patterns:
                         all_geo_patterns[location] = geo
@@ -254,14 +205,16 @@ def get_analysis():
                     'denied': total_mfa_denied,
                     'success_rate': mfa_success_rate
                 },
-                'suspicious_users': sorted(list(all_suspicious_users.values()), key=lambda x: x.get('failure_count', 0), reverse=True)[:10],
+                'suspicious_users': sorted(list(all_suspicious_users.values()), key=lambda x: x.get('failure_count', 0) if isinstance(x, dict) else 0, reverse=True)[:10],
                 'mfa_suspicious_users': [],
-                'suspicious_ips': sorted(list(all_suspicious_ips.values()), key=lambda x: x.get('failure_count', 0), reverse=True)[:10],
-                'geographic_patterns': sorted(list(all_geo_patterns.values()), key=lambda x: x.get('count', 0), reverse=True)
+                'suspicious_ips': sorted(list(all_suspicious_ips.values()), key=lambda x: x.get('failure_count', 0) if isinstance(x, dict) else 0, reverse=True)[:10],
+                'geographic_patterns': sorted([g for g in all_geo_patterns.values() if isinstance(g, dict)], key=lambda x: x.get('count', 0), reverse=True)
             })
             
         except Exception as e:
+            import traceback
             logger.error(f"Error fetching aggregated analysis for {hours} hours: {str(e)}")
+            logger.error(traceback.format_exc())
             # Return empty structure instead of error
             return jsonify({
                 'summary': {
@@ -286,8 +239,64 @@ def get_analysis():
     
     # Default: return latest saved analysis
     analysis = get_latest_analysis()
-    transformed = transform_analysis_for_dashboard(analysis)
-    return jsonify(transformed)
+    
+    # Transform analysis to dashboard format
+    failed_logins = analysis.get('failed_logins', {})
+    
+    # Convert suspicious_users dict to list
+    suspicious_users_list = []
+    for user, data in failed_logins.get('suspicious_users', {}).items():
+        suspicious_users_list.append({
+            'user': user,
+            'failure_count': data.get('failure_count', 0),
+            'risk_level': data.get('risk_level', 'low')
+        })
+    
+    # Convert suspicious_ips dict to list
+    suspicious_ips_list = []
+    for ip, data in failed_logins.get('suspicious_ips', {}).items():
+        suspicious_ips_list.append({
+            'ip': ip,
+            'failure_count': data.get('failure_count', 0),
+            'risk_level': data.get('risk_level', 'low')
+        })
+    
+    # Convert geographic_patterns dict to list
+    geo_patterns = analysis.get('geographic_patterns', {})
+    if isinstance(geo_patterns, dict):
+        geo_list = []
+        for location, data in geo_patterns.items():
+            geo_list.append({
+                'location': location,
+                'count': data.get('count', 0) if isinstance(data, dict) else data,
+                'users': data.get('users', []) if isinstance(data, dict) else []
+            })
+    else:
+        geo_list = geo_patterns
+    
+    # MFA suspicious users
+    mfa_suspicious = []
+    mfa_analysis = analysis.get('mfa_analysis', {})
+    for user, count in mfa_analysis.get('suspicious_users', {}).items():
+        mfa_suspicious.append({
+            'user': user,
+            'failure_count': count
+        })
+    
+    return jsonify({
+        'summary': analysis.get('summary', {}),
+        'suspicious_users': suspicious_users_list,
+        'suspicious_ips': suspicious_ips_list,
+        'mfa_analysis': {
+            'successful': mfa_analysis.get('successful', 0),
+            'failed': mfa_analysis.get('failed', 0),
+            'denied': mfa_analysis.get('denied', 0),
+            'success_rate': mfa_analysis.get('success_rate', 0)
+        },
+        'mfa_suspicious_users': mfa_suspicious,
+        'geographic_patterns': geo_list,
+        'last_updated': analysis.get('last_updated', '')
+    })
 
 
 @app.route('/api/summary')
@@ -399,14 +408,13 @@ def fetch_fresh_data():
         
         # After successful fetch, reload and return new data
         analysis = get_latest_analysis()
-        transformed = transform_analysis_for_dashboard(analysis)
         
         logger.info("Fresh data fetch completed successfully")
         
         return jsonify({
             'status': 'success',
             'message': 'Fresh data fetched from Okta successfully',
-            'data': transformed,
+            'data': analysis,
             'timestamp': datetime.now().isoformat()
         }), 200
         
