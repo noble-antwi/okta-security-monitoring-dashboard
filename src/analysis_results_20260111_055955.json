@@ -1,0 +1,39 @@
+{
+  "summary": {
+    "total_events": 20,
+    "total_authentications": 12,
+    "successful_logins": 12,
+    "failed_logins": 0,
+    "unique_users": 2,
+    "unique_ips": 3,
+    "login_success_rate": 100.0
+  },
+  "failed_logins": {
+    "suspicious_users": {},
+    "suspicious_ips": {}
+  },
+  "mfa_analysis": {
+    "total_challenges": 7,
+    "successful": 7,
+    "failed": 0,
+    "denied": 0,
+    "users_with_failures": {},
+    "success_rate": 100.0,
+    "suspicious_users": {}
+  },
+  "geographic_patterns": {
+    "Chicago, United States": {
+      "count": 10,
+      "users": [
+        "andrew.lewis@biira.online",
+        "krista.scott@biira.online"
+      ]
+    },
+    "Boardman, United States": {
+      "count": 2,
+      "users": [
+        "andrew.lewis@biira.online"
+      ]
+    }
+  }
+}
