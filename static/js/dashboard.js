@@ -254,6 +254,8 @@ async function handleCustomHours() {
  * Load analysis data for specific date range
  */
 async function loadDataWithDateRange(hours) {
+    console.log(`⏱️ loadDataWithDateRange called with hours=${hours}`);
+    
     loadingState.style.display = 'flex';
     errorState.style.display = 'none';
     dashboardContent.style.display = 'none';
@@ -282,6 +284,9 @@ async function loadDataWithDateRange(hours) {
     
     // Also update trends chart with the new time range
     updateTrendForTimeRange(hours);
+    
+    // Update week-over-week comparison
+    loadWeekOverWeekData();
 }
 
 /**
@@ -910,8 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load trend data and week-over-week comparison
     loadTrendData('30d');
     loadWeekOverWeekData();
-    
-}, 5 * 60 * 1000);
+});
 
 /**
  * Load and render trend data (24h, 7-day, or 30-day)
@@ -920,6 +924,8 @@ document.addEventListener('DOMContentLoaded', () => {
  * Update trends chart based on main time range selection
  */
 async function updateTrendForTimeRange(hours) {
+    console.log(`📊 updateTrendForTimeRange called with hours=${hours}`);
+    
     // Map hours to trend period
     let period = '30d'; // default
     
@@ -937,6 +943,7 @@ async function updateTrendForTimeRange(hours) {
         else period = '30d';
     }
     
+    console.log(`📊 Mapped hours=${hours} to period=${period}`);
     await loadTrendData(period);
 }
 
@@ -960,6 +967,7 @@ async function loadTrendData(period = '30d') {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         const data = await response.json();
+        console.log(`Fetched trend data for ${period}:`, data);
         
         // For 24h, convert main analysis format to trend format
         let trendData;
@@ -969,15 +977,10 @@ async function loadTrendData(period = '30d') {
             trendData = data;
         }
         
+        console.log(`Rendering chart with trendData:`, trendData);
         renderTrendChart(trendData, period);
         updateTrendStats(trendData);
         updateChartInfo(period, trendData);
-        
-        // Update active button
-        document.querySelectorAll('.trend-btn[data-period]').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        document.querySelector(`.trend-btn[data-period="${period}"]`)?.classList.add('active');
         
         // Remove loading state
         if (chartContainer) {
@@ -1042,7 +1045,10 @@ function updateChartInfo(period, trendData) {
  */
 function renderTrendChart(trendData, period = '30d') {
     const ctx = document.getElementById('trendChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.error('❌ Chart canvas element not found');
+        return;
+    }
     
     // Destroy existing chart if it exists
     if (charts.trend) {
@@ -1052,9 +1058,11 @@ function renderTrendChart(trendData, period = '30d') {
     const {timestamps, data_points} = trendData;
     
     if (!timestamps || !data_points) {
-        console.error('Invalid trend data format');
+        console.error('❌ Invalid trend data format - missing timestamps or data_points', {timestamps, data_points});
         return;
     }
+    
+    console.log(`✅ Rendering chart with ${timestamps.length} data points for period: ${period}`);
     
     // Format timestamps for display (show every Nth label to avoid crowding)
     const labelStep = Math.max(1, Math.ceil(timestamps.length / 8));
