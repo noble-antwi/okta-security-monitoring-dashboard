@@ -285,8 +285,8 @@ async function loadDataWithDateRange(hours) {
     // Also update trends chart with the new time range
     updateTrendForTimeRange(hours);
     
-    // Update week-over-week comparison
-    loadWeekOverWeekData();
+    // Update period-over-period comparison with current time range
+    loadWeekOverWeekData(hours);
 }
 
 /**
@@ -1230,38 +1230,114 @@ function updateTrendStats(trendData) {
 /**
  * Load and display week-over-week comparison
  */
-async function loadWeekOverWeekData() {
+async function loadWeekOverWeekData(hours = currentHours) {
     try {
-        const response = await fetch('/api/trends/week-over-week');
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        console.log(`📊 Loading period-over-period comparison for ${hours} hours`);
         
-        const wowData = await response.json();
+        // Fetch data for current period
+        const currentUrl = hours === 24 ? '/api/analysis' : `/api/analysis?hours=${hours}`;
+        const currentResponse = await fetch(currentUrl);
+        if (!currentResponse.ok) throw new Error(`HTTP ${currentResponse.status}`);
+        const currentData = await currentResponse.json();
+        
+        // Fetch data for previous period (same duration)
+        const prevHours = hours * 2; // Go back double the time to get previous period
+        const prevUrl = `/api/analysis?hours=${prevHours}`;
+        const prevResponse = await fetch(prevUrl);
+        if (!prevResponse.ok) throw new Error(`HTTP ${prevResponse.status}`);
+        const prevAllData = await prevResponse.json();
+        
+        // Calculate previous period data by subtracting current from total
+        // This is a simplified approach - use aggregates instead
+        const wowData = {
+            current_period: {
+                total_events: currentData.summary?.total_events || 0,
+                failed_logins: currentData.summary?.failed_logins || 0,
+                avg_success_rate: currentData.summary?.login_success_rate || 0
+            },
+            last_period: {
+                total_events: Math.max(0, (prevAllData.summary?.total_events || 0) - (currentData.summary?.total_events || 0)),
+                failed_logins: Math.max(0, (prevAllData.summary?.failed_logins || 0) - (currentData.summary?.failed_logins || 0)),
+                avg_success_rate: prevAllData.summary?.login_success_rate || 0
+            },
+            period_label: getPeriodLabel(hours)
+        };
+        
+        // Calculate comparisons
+        wowData.comparison = {
+            events_change: calculateChange(wowData.current_period.total_events, wowData.last_period.total_events),
+            failures_change: calculateChange(wowData.current_period.failed_logins, wowData.last_period.failed_logins),
+            success_rate_change: calculateChange(wowData.current_period.avg_success_rate, wowData.last_period.avg_success_rate)
+        };
+        
+        console.log(`📊 Period comparison data:`, wowData);
         updateWeekOverWeekCards(wowData);
         
     } catch (error) {
-        console.error('Error loading week-over-week data:', error);
+        console.error('Error loading period comparison data:', error);
     }
+}
+
+/**
+ * Get human-readable label for time period
+ */
+function getPeriodLabel(hours) {
+    if (hours === 24) return 'Daily';
+    if (hours === 168) return '7-Day';
+    if (hours === 720) return '30-Day';
+    const days = Math.floor(hours / 24);
+    return `${days}-Day`;
+}
+
+/**
+ * Calculate change percentage and direction
+ */
+function calculateChange(current, previous) {
+    if (previous === 0) {
+        return {
+            change_percent: current > 0 ? 100 : 0,
+            direction: current > 0 ? 'up' : 'stable'
+        };
+    }
+    const changePercent = Math.round(((current - previous) / previous) * 100);
+    const direction = changePercent > 0 ? 'up' : (changePercent < 0 ? 'down' : 'stable');
+    return {
+        change_percent: Math.abs(changePercent),
+        direction: direction
+    };
 }
 
 /**
  * Update week-over-week comparison cards
  */
 function updateWeekOverWeekCards(wowData) {
-    const {current_week, last_week, comparison} = wowData;
+    const {current_period, last_period, comparison, period_label} = wowData;
+    
+    // Update labels to show the period type
+    const labels = document.querySelectorAll('.comparison-card .card-header');
+    labels.forEach(label => {
+        const text = label.textContent;
+        if (text.includes('This')) {
+            label.innerHTML = `<span>This ${period_label}:</span>`;
+        }
+        if (text.includes('Last')) {
+            label.innerHTML = `<span>Previous ${period_label}:</span>`;
+        }
+    });
     
     // Events Card
-    document.getElementById('wowCurrentEvents').textContent = current_week.total_events || '—';
-    document.getElementById('wowLastEvents').textContent = last_week.total_events || '—';
+    document.getElementById('wowCurrentEvents').textContent = current_period.total_events || '—';
+    document.getElementById('wowLastEvents').textContent = last_period.total_events || '—';
     updateChangeIndicator('wowEventsChange', comparison.events_change);
     
     // Failures Card
-    document.getElementById('wowCurrentFailures').textContent = current_week.failed_logins || '—';
-    document.getElementById('wowLastFailures').textContent = last_week.failed_logins || '—';
+    document.getElementById('wowCurrentFailures').textContent = current_period.failed_logins || '—';
+    document.getElementById('wowLastFailures').textContent = last_period.failed_logins || '—';
     updateChangeIndicator('wowFailuresChange', comparison.failures_change);
     
     // Success Rate Card
-    document.getElementById('wowCurrentRate').textContent = (current_week.avg_success_rate || 0).toFixed(1) + '%';
-    document.getElementById('wowLastRate').textContent = (last_week.avg_success_rate || 0).toFixed(1) + '%';
+    document.getElementById('wowCurrentRate').textContent = (current_period.avg_success_rate || 0).toFixed(1) + '%';
+    document.getElementById('wowLastRate').textContent = (last_period.avg_success_rate || 0).toFixed(1) + '%';
     updateChangeIndicator('wowRateChange', comparison.success_rate_change);
 }
 
