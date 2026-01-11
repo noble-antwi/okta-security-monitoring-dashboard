@@ -956,8 +956,9 @@ async function loadTrendData(period = '30d') {
         }
         
         // Map period to endpoint
+        // Note: For 24h, we use 7d trends since analysis endpoint doesn't have time-series data
         const endpointMap = {
-            '24h': '/api/analysis',  // Use main analysis endpoint for 24h
+            '24h': '/api/trends/7d',  // Use 7d trends for 24h to get time-series data
             '7d': '/api/trends/7d',
             '30d': '/api/trends/30d'
         };
@@ -969,13 +970,8 @@ async function loadTrendData(period = '30d') {
         const data = await response.json();
         console.log(`Fetched trend data for ${period}:`, data);
         
-        // For 24h, convert main analysis format to trend format
-        let trendData;
-        if (period === '24h') {
-            trendData = convertAnalysisToTrendData(data);
-        } else {
-            trendData = data;
-        }
+        // Data is already in trend format from the API
+        let trendData = data;
         
         console.log(`Rendering chart with trendData:`, trendData);
         renderTrendChart(trendData, period);
@@ -991,36 +987,6 @@ async function loadTrendData(period = '30d') {
         console.error('Error loading trend data:', error);
         showNotification('Failed to load trend data', 'error');
     }
-}
-
-/**
- * Convert main analysis data to trend format for 24h display
- */
-function convertAnalysisToTrendData(analysis) {
-    const summary = analysis.summary || {};
-    const now = new Date();
-    const timestamp = now.toISOString();
-    
-    return {
-        trend_type: 'last_24h',
-        timestamps: [timestamp],
-        data_points: {
-            total_events: [summary.total_events || 0],
-            failed_logins: [summary.failed_logins || 0],
-            successful_logins: [summary.successful_logins || 0],
-            unique_users: [summary.unique_users || 0],
-            login_success_rate: [summary.login_success_rate || 0]
-        },
-        summary: {
-            min_events: summary.total_events || 0,
-            max_events: summary.total_events || 0,
-            avg_events: summary.total_events || 0,
-            min_failures: summary.failed_logins || 0,
-            max_failures: summary.failed_logins || 0,
-            avg_failures: summary.failed_logins || 0,
-            data_points_count: 1
-        }
-    };
 }
 
 /**
@@ -1083,7 +1049,7 @@ function renderTrendChart(trendData, period = '30d') {
     
     const datasets = [
         {
-            label: 'Total Events',
+            label: 'Total Events (Count)',
             data: data_points.total_events || [],
             borderColor: '#1e40af',
             backgroundColor: 'rgba(30, 64, 175, 0.1)',
@@ -1101,7 +1067,7 @@ function renderTrendChart(trendData, period = '30d') {
             }
         },
         {
-            label: 'Failed Logins',
+            label: 'Failed Logins (Count)',
             data: data_points.failed_logins || [],
             borderColor: '#ef4444',
             backgroundColor: 'rgba(239, 68, 68, 0.05)',
@@ -1116,7 +1082,7 @@ function renderTrendChart(trendData, period = '30d') {
             yAxisID: 'y1'
         },
         {
-            label: 'Success Rate %',
+            label: 'Login Success Rate (%)',
             data: data_points.login_success_rate || [],
             borderColor: '#22c55e',
             backgroundColor: 'rgba(34, 197, 94, 0.05)',
@@ -1166,7 +1132,7 @@ function renderTrendChart(trendData, period = '30d') {
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
                     padding: 14,
                     titleFont: {size: 13, weight: 'bold'},
                     bodyFont: {size: 12},
@@ -1174,8 +1140,21 @@ function renderTrendChart(trendData, period = '30d') {
                     borderWidth: 1,
                     displayColors: true,
                     callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            // Add value with appropriate formatting
+                            if (label.includes('%')) {
+                                label += context.parsed.y.toFixed(1) + '%';
+                            } else {
+                                label += context.parsed.y.toLocaleString();
+                            }
+                            return label;
+                        },
                         footer: function(context) {
-                            return 'Click to see more details';
+                            return '─ Left axis: Count | Right axis: Percentage';
                         }
                     }
                 }

@@ -963,6 +963,41 @@ section {
     font-style: italic;
 }
 
+.chart-legend-help {
+    background: rgba(30, 64, 175, 0.08);
+    border-left: 4px solid #1e40af;
+    padding: var(--spacing-md);
+    border-radius: 4px;
+    margin-bottom: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.legend-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.legend-item strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.legend-item span:last-child {
+    line-height: 1.4;
+}
+
 .trend-chart-container canvas {
     max-height: 300px;
 }
