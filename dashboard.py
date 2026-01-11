@@ -300,6 +300,45 @@ def fetch_fresh_data():
         }), 500
 
 
+@app.route('/api/trends/7d')
+def get_7day_trends():
+    """Get 7-day trend analysis"""
+    try:
+        from trends_analyzer import TrendsAnalyzer
+        analyzer = TrendsAnalyzer(ANALYSIS_RESULTS_DIR)
+        trends = analyzer.get_7day_trends()
+        return jsonify(trends), 200
+    except Exception as e:
+        logger.error(f"Error getting 7-day trends: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/trends/30d')
+def get_30day_trends():
+    """Get 30-day trend analysis"""
+    try:
+        from trends_analyzer import TrendsAnalyzer
+        analyzer = TrendsAnalyzer(ANALYSIS_RESULTS_DIR)
+        trends = analyzer.get_30day_trends()
+        return jsonify(trends), 200
+    except Exception as e:
+        logger.error(f"Error getting 30-day trends: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/trends/week-over-week')
+def get_week_over_week():
+    """Get week-over-week comparison"""
+    try:
+        from trends_analyzer import TrendsAnalyzer
+        analyzer = TrendsAnalyzer(ANALYSIS_RESULTS_DIR)
+        comparison = analyzer.get_week_over_week()
+        return jsonify(comparison), 200
+    except Exception as e:
+        logger.error(f"Error getting week-over-week comparison: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors"""

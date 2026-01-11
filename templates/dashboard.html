@@ -304,6 +304,122 @@
                     </table>
                 </div>
             </section>
+
+            <!-- Trends Section -->
+            <section class="trends-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-line"></i> Authentication Trends & Historical Analysis</h2>
+                    <div class="trend-controls">
+                        <button class="trend-btn" data-period="7d" style="margin-right: 10px;">
+                            <i class="fas fa-calendar-week"></i> Last 7 Days
+                        </button>
+                        <button class="trend-btn active" data-period="30d">
+                            <i class="fas fa-calendar-alt"></i> Last 30 Days
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Trend Chart -->
+                <div class="trend-chart-container">
+                    <div class="chart-header">
+                        <h3>Authentication Activity Trend</h3>
+                        <span class="chart-info" id="trendChartInfo">Total events over time</span>
+                    </div>
+                    <canvas id="trendChart" height="80"></canvas>
+                </div>
+
+                <!-- Week-over-Week Comparison -->
+                <div class="wow-section">
+                    <h3><i class="fas fa-columns"></i> Week-over-Week Comparison</h3>
+                    <div class="wow-grid">
+                        <!-- Events Card -->
+                        <div class="comparison-card">
+                            <div class="card-header">
+                                <span class="card-icon events-icon"><i class="fas fa-chart-bar"></i></span>
+                                <h4>Total Events</h4>
+                            </div>
+                            <div class="card-content">
+                                <div class="metric-row">
+                                    <span class="metric-label">This Week:</span>
+                                    <span class="metric-value" id="wowCurrentEvents">—</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">Last Week:</span>
+                                    <span class="metric-value secondary" id="wowLastEvents">—</span>
+                                </div>
+                                <div class="metric-change">
+                                    <span class="change-indicator" id="wowEventsChange">↔ 0%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Failed Logins Card -->
+                        <div class="comparison-card">
+                            <div class="card-header">
+                                <span class="card-icon failure-icon"><i class="fas fa-exclamation-circle"></i></span>
+                                <h4>Failed Logins</h4>
+                            </div>
+                            <div class="card-content">
+                                <div class="metric-row">
+                                    <span class="metric-label">This Week:</span>
+                                    <span class="metric-value" id="wowCurrentFailures">—</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">Last Week:</span>
+                                    <span class="metric-value secondary" id="wowLastFailures">—</span>
+                                </div>
+                                <div class="metric-change">
+                                    <span class="change-indicator" id="wowFailuresChange">↔ 0%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Success Rate Card -->
+                        <div class="comparison-card">
+                            <div class="card-header">
+                                <span class="card-icon success-icon"><i class="fas fa-check-circle"></i></span>
+                                <h4>Avg Success Rate</h4>
+                            </div>
+                            <div class="card-content">
+                                <div class="metric-row">
+                                    <span class="metric-label">This Week:</span>
+                                    <span class="metric-value" id="wowCurrentRate">—</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">Last Week:</span>
+                                    <span class="metric-value secondary" id="wowLastRate">—</span>
+                                </div>
+                                <div class="metric-change">
+                                    <span class="change-indicator" id="wowRateChange">↔ 0%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trend Statistics -->
+                <div class="trend-stats">
+                    <h3>Period Statistics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Minimum Events</div>
+                            <div class="stat-value" id="statMinEvents">—</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Maximum Events</div>
+                            <div class="stat-value" id="statMaxEvents">—</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Average Events</div>
+                            <div class="stat-value" id="statAvgEvents">—</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Data Points</div>
+                            <div class="stat-value" id="statDataPoints">—</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
     </main>
 

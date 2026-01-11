@@ -842,6 +842,339 @@ section {
     margin: 0;
 }
 
+/* ============================================
+   TRENDS SECTION STYLES
+   ============================================ */
+
+.trends-section {
+    background: var(--card-bg);
+    border-left: 4px solid var(--primary);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    box-shadow: var(--card-shadow);
+}
+
+.trends-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.trends-section .section-header h2 {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.trends-section .section-header h2 i {
+    color: var(--primary);
+}
+
+.trend-controls {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.trend-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: transparent;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    transition: all var(--transition);
+}
+
+.trend-btn:hover {
+    background: var(--primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.2);
+}
+
+.trend-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* Trend Chart Container */
+.trend-chart-container {
+    background: linear-gradient(135deg, var(--card-bg) 0%, rgba(30, 64, 175, 0.05) 100%);
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--spacing-lg);
+    border: 1px solid var(--border-color);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.chart-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.chart-info {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.trend-chart-container canvas {
+    max-height: 300px;
+}
+
+/* Week-over-Week Section */
+.wow-section {
+    margin-bottom: var(--spacing-lg);
+}
+
+.wow-section h3 {
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-md);
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.wow-section h3 i {
+    color: var(--primary);
+}
+
+.wow-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.comparison-card {
+    background: linear-gradient(135deg, rgba(30, 64, 175, 0.05) 0%, rgba(99, 102, 241, 0.03) 100%);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md);
+    transition: all var(--transition);
+}
+
+.comparison-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 4px 16px rgba(30, 64, 175, 0.15);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.card-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 1rem;
+}
+
+.card-icon.events-icon {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.card-icon.failure-icon {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.card-icon.success-icon {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+}
+
+.card-header h4 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.card-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-xs) 0;
+}
+
+.metric-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.metric-value {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.metric-value.secondary {
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+.metric-change {
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+    border-top: 1px dashed var(--border-color);
+}
+
+.change-indicator {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.change-indicator.up {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+}
+
+.change-indicator.down {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.change-indicator.stable {
+    background: rgba(156, 163, 175, 0.1);
+    color: var(--text-secondary);
+}
+
+/* Trend Statistics */
+.trend-stats {
+    background: rgba(30, 64, 175, 0.03);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.trend-stats h3 {
+    margin: 0 0 var(--spacing-md) 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.stat-item {
+    text-align: center;
+    padding: var(--spacing-sm);
+    background: var(--card-bg);
+    border-radius: calc(var(--border-radius) - 2px);
+    border: 1px solid var(--border-color);
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.4rem;
+    color: var(--primary);
+    font-weight: 700;
+}
+
+/* Responsive Design for Trends */
+@media (max-width: 768px) {
+    .trends-section .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+    }
+
+    .trend-controls {
+        width: 100%;
+    }
+
+    .trend-btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .wow-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .trends-section {
+        padding: var(--spacing-md);
+    }
+
+    .trend-chart-container {
+        padding: var(--spacing-md);
+    }
+
+    .chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .trend-btn {
+        font-size: 0.9rem;
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+}
+
+
 .data-table {
     width: 100%;
     border-collapse: collapse;

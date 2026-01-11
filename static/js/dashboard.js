@@ -904,4 +904,262 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') handleCustomHours();
     });
     
+    // Load trend data and week-over-week comparison
+    loadTrendData('30d');
+    loadWeekOverWeekData();
+    
 }, 5 * 60 * 1000);
+
+/**
+ * Load and render trend data (7-day or 30-day)
+ */
+async function loadTrendData(period = '30d') {
+    try {
+        const endpoint = period === '7d' ? '/api/trends/7d' : '/api/trends/30d';
+        const response = await fetch(endpoint);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const trendData = await response.json();
+        renderTrendChart(trendData);
+        updateTrendStats(trendData);
+        
+        // Update active button
+        document.querySelectorAll('.trend-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`.trend-btn[data-period="${period}"]`)?.classList.add('active');
+        
+    } catch (error) {
+        console.error('Error loading trend data:', error);
+        showNotification('Failed to load trend data', 'error');
+    }
+}
+
+/**
+ * Render Chart.js line chart for trends
+ */
+function renderTrendChart(trendData) {
+    const ctx = document.getElementById('trendChart');
+    if (!ctx) return;
+    
+    // Destroy existing chart if it exists
+    if (charts.trend) {
+        charts.trend.destroy();
+    }
+    
+    const {timestamps, data_points} = trendData;
+    
+    // Format timestamps for display (show every Nth label to avoid crowding)
+    const labelStep = Math.ceil(timestamps.length / 8);
+    const displayLabels = timestamps.map((ts, i) => {
+        if (i % labelStep === 0) {
+            const date = new Date(ts);
+            return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric', hour: '2-digit'});
+        }
+        return '';
+    });
+    
+    charts.trend = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: displayLabels,
+            datasets: [
+                {
+                    label: 'Total Events',
+                    data: data_points.total_events,
+                    borderColor: '#1e40af',
+                    backgroundColor: 'rgba(30, 64, 175, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#1e40af',
+                    pointBorderColor: 'white',
+                    pointBorderWidth: 2,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Failed Logins',
+                    data: data_points.failed_logins,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#ef4444',
+                    yAxisID: 'y1'
+                },
+                {
+                    label: 'Success Rate %',
+                    data: data_points.login_success_rate,
+                    borderColor: '#22c55e',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#22c55e',
+                    yAxisID: 'y2'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: '#333',
+                        usePointStyle: true,
+                        padding: 15,
+                        font: {size: 12, weight: '500'}
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: {size: 12, weight: 'bold'},
+                    bodyFont: {size: 11},
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    borderWidth: 1
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#666',
+                        font: {size: 11}
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Total Events',
+                        color: '#1e40af',
+                        font: {weight: 'bold'}
+                    },
+                    ticks: {color: '#1e40af'},
+                    grid: {color: 'rgba(30, 64, 175, 0.1)'}
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Failed Logins',
+                        color: '#ef4444',
+                        font: {weight: 'bold'}
+                    },
+                    ticks: {color: '#ef4444'},
+                    grid: {drawOnChartArea: false}
+                },
+                y2: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    offset: true,
+                    title: {
+                        display: true,
+                        text: 'Success Rate %',
+                        color: '#22c55e',
+                        font: {weight: 'bold'}
+                    },
+                    ticks: {color: '#22c55e'},
+                    grid: {drawOnChartArea: false}
+                }
+            }
+        }
+    });
+}
+
+/**
+ * Update trend statistics display
+ */
+function updateTrendStats(trendData) {
+    const stats = trendData.summary;
+    
+    document.getElementById('statMinEvents').textContent = stats.min_events || '—';
+    document.getElementById('statMaxEvents').textContent = stats.max_events || '—';
+    document.getElementById('statAvgEvents').textContent = stats.avg_events || '—';
+    document.getElementById('statDataPoints').textContent = stats.data_points_count || '—';
+}
+
+/**
+ * Load and display week-over-week comparison
+ */
+async function loadWeekOverWeekData() {
+    try {
+        const response = await fetch('/api/trends/week-over-week');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const wowData = await response.json();
+        updateWeekOverWeekCards(wowData);
+        
+    } catch (error) {
+        console.error('Error loading week-over-week data:', error);
+    }
+}
+
+/**
+ * Update week-over-week comparison cards
+ */
+function updateWeekOverWeekCards(wowData) {
+    const {current_week, last_week, comparison} = wowData;
+    
+    // Events Card
+    document.getElementById('wowCurrentEvents').textContent = current_week.total_events || '—';
+    document.getElementById('wowLastEvents').textContent = last_week.total_events || '—';
+    updateChangeIndicator('wowEventsChange', comparison.events_change);
+    
+    // Failures Card
+    document.getElementById('wowCurrentFailures').textContent = current_week.failed_logins || '—';
+    document.getElementById('wowLastFailures').textContent = last_week.failed_logins || '—';
+    updateChangeIndicator('wowFailuresChange', comparison.failures_change);
+    
+    // Success Rate Card
+    document.getElementById('wowCurrentRate').textContent = (current_week.avg_success_rate || 0).toFixed(1) + '%';
+    document.getElementById('wowLastRate').textContent = (last_week.avg_success_rate || 0).toFixed(1) + '%';
+    updateChangeIndicator('wowRateChange', comparison.success_rate_change);
+}
+
+/**
+ * Update change indicator with direction arrow and percentage
+ */
+function updateChangeIndicator(elementId, changeData) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    const {change_percent, direction} = changeData;
+    const arrow = direction === 'up' ? '↑' : (direction === 'down' ? '↓' : '↔');
+    const color = direction === 'up' ? 'up' : (direction === 'down' ? 'down' : 'stable');
+    
+    element.textContent = `${arrow} ${Math.abs(change_percent)}%`;
+    element.className = `change-indicator ${color}`;
+}
+
+/**
+ * Handle trend period button clicks
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.trend-btn[data-period]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const period = btn.getAttribute('data-period');
+            loadTrendData(period);
+        });
+    });
+});
+
